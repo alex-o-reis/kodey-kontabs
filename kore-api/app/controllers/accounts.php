@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../kore/Controller.php';
 require_once __DIR__ . '/../models/Account.php';
+require_once __DIR__ . '/../services/AccountService.php';
 
 class Accounts extends Controller
 {
@@ -47,6 +48,25 @@ class Accounts extends Controller
         ]);
     }
 
+    /**
+     * GET /accounts/{id}/statement
+     * Retorna extrato detalhado da conta com saldo e movimentações.
+     */
+    public function get_statement($id)
+    {
+        $orgId = $this->getActiveOrgId();
+        $filters = [
+            'month' => $_GET['month'] ?? date('Y-m')
+        ];
+
+        $statement = AccountService::getStatement($orgId, (int) $id, $filters);
+        if (empty($statement)) {
+            return $this->error("Conta não encontrada ou sem dados para o período.", 404);
+        }
+
+        return $this->json(['data' => $statement]);
+    }
+
     public function post()
     {
         $orgId = $this->getActiveOrgId();
@@ -71,5 +91,36 @@ class Accounts extends Controller
         $id = (int) Model::getPdo()->lastInsertId();
 
         return $this->json(['message' => 'Conta criada com sucesso.', 'id' => $id], 201);
+    }
+
+    /**
+     * POST /accounts/transfer
+     * Realiza transferência patrimonial entre contas.
+     */
+    public function post_transfer()
+    {
+        $orgId = $this->getActiveOrgId();
+        $body = $this->request->getJson();
+
+        $fromId = (int) ($body['from_account_id'] ?? 0);
+        $toId = (int) ($body['to_account_id'] ?? 0);
+        $amount = (float) ($body['amount'] ?? 0.0);
+        $date = $body['date'] ?? date('Y-m-d');
+        $desc = trim($body['description'] ?? '');
+        $notes = trim($body['notes'] ?? '');
+
+        if (!$fromId || !$toId) {
+            return $this->error("Selecione a conta de origem e a conta de destino.", 422);
+        }
+
+        try {
+            $result = AccountService::transfer($orgId, $fromId, $toId, $amount, $date, $desc, $notes);
+            return $this->json([
+                'message' => 'Transferência realizada com sucesso!',
+                'data' => $result
+            ]);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
     }
 }

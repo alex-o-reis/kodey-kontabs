@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../kore/Controller.php';
 require_once __DIR__ . '/../models/CreditCard.php';
+require_once __DIR__ . '/../services/CreditCardService.php';
 
 class Creditcards extends Controller
 {
@@ -22,18 +23,37 @@ class Creditcards extends Controller
         $orgId = $this->getActiveOrgId();
 
         if ($id) {
-            $stmt = Model::query("SELECT * FROM credit_cards WHERE id = ? AND organization_id = ?", [$id, $orgId]);
-            $card = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$card) {
+            $details = CreditCardService::getCardDetails($orgId, (int) $id);
+            if (!$details) {
                 return $this->error("Cartão não encontrado.", 404);
             }
-            return $this->json(['data' => $card]);
+            return $this->json(['data' => $details]);
         }
 
         $stmt = Model::query("SELECT * FROM credit_cards WHERE organization_id = ? AND is_active = 1 ORDER BY name ASC", [$orgId]);
         $cards = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        return $this->json(['data' => $cards]);
+        // Enriquece cada cartão com dados de faturas e limites
+        $enriched = [];
+        foreach ($cards as $c) {
+            $details = CreditCardService::getCardDetails($orgId, (int) $c['id']);
+            $enriched[] = $details ? $details : ['card' => $c];
+        }
+
+        return $this->json(['data' => $enriched]);
+    }
+
+    /**
+     * GET /creditcards/{id}/invoices
+     */
+    public function get_invoices($id)
+    {
+        $orgId = $this->getActiveOrgId();
+        $details = CreditCardService::getCardDetails($orgId, (int) $id);
+        if (!$details) {
+            return $this->error("Cartão não encontrado.", 404);
+        }
+        return $this->json(['data' => $details]);
     }
 
     public function post()
@@ -61,5 +81,34 @@ class Creditcards extends Controller
         $id = (int) Model::getPdo()->lastInsertId();
 
         return $this->json(['message' => 'Cartão de crédito criado com sucesso.', 'id' => $id], 201);
+    }
+
+    /**
+     * POST /creditcards/{id}/pay
+     * Liquidação de fatura do cartão com débito em conta.
+     */
+    public function post_pay($id)
+    {
+        $orgId = $this->getActiveOrgId();
+        $body = $this->request->getJson();
+
+        $accountId = (int) ($body['account_id'] ?? 0);
+        $amount = (float) ($body['amount'] ?? 0.0);
+        $date = $body['date'] ?? date('Y-m-d');
+        $notes = trim($body['notes'] ?? '');
+
+        if (!$accountId || $amount <= 0) {
+            return $this->error("Informe a conta bancária pagadora e o valor do pagamento.", 422);
+        }
+
+        try {
+            $result = CreditCardService::payInvoice($orgId, (int) $id, $accountId, $amount, $date, $notes);
+            return $this->json([
+                'message' => 'Fatura paga com sucesso!',
+                'data' => $result
+            ]);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
     }
 }

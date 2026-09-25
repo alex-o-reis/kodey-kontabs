@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../kore/Controller.php';
 require_once __DIR__ . '/../models/Reserve.php';
+require_once __DIR__ . '/../services/ReserveService.php';
 
 class Reserves extends Controller
 {
@@ -33,30 +34,21 @@ class Reserves extends Controller
             return $this->json(['data' => $reserve]);
         }
 
-        $stmt = Model::query("SELECT * FROM reserves WHERE organization_id = ? AND is_active = 1 ORDER BY priority ASC, name ASC", [$orgId]);
-        $reserves = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        $totalAccumulated = 0.0;
-        $totalTarget = 0.0;
-
-        foreach ($reserves as &$r) {
-            $target = (float) $r['target_amount'];
-            $current = (float) $r['current_amount'];
-            $r['percentage'] = $target > 0 ? round(($current / $target) * 100) : 0;
-            $r['formatted_current'] = 'R$ ' . number_format($current, 2, ',', '.');
-            $r['formatted_target'] = 'R$ ' . number_format($target, 2, ',', '.');
-            $totalAccumulated += $current;
-            $totalTarget += $target;
-        }
-
+        $result = ReserveService::getProjections($orgId);
         return $this->json([
-            'data' => $reserves,
-            'meta' => [
-                'total_accumulated' => $totalAccumulated,
-                'total_target' => $totalTarget,
-                'overall_percentage' => $totalTarget > 0 ? round(($totalAccumulated / $totalTarget) * 100) : 0
-            ]
+            'data' => $result['reserves'],
+            'meta' => $result['summary']
         ]);
+    }
+
+    /**
+     * GET /reserves/projections
+     */
+    public function get_projections()
+    {
+        $orgId = $this->getActiveOrgId();
+        $result = ReserveService::getProjections($orgId);
+        return $this->json(['data' => $result]);
     }
 
     public function post()
@@ -89,10 +81,10 @@ class Reserves extends Controller
     }
 
     /**
-     * POST /reserves/{id}/deposit
-     * Realiza um aporte na reserva, criando uma transação e incrementando o saldo.
+     * POST /reserves/{id}/allocate
+     * Fluxo "Dar Destino ao Dinheiro"
      */
-    public function post_deposit($id)
+    public function post_allocate($id)
     {
         $orgId = $this->getActiveOrgId();
         $body = $this->request->getJson();
@@ -100,34 +92,53 @@ class Reserves extends Controller
         $amount = (float) ($body['amount'] ?? 0.0);
         $accountId = !empty($body['account_id']) ? (int) $body['account_id'] : null;
         $date = $body['date'] ?? date('Y-m-d');
-        $notes = $body['notes'] ?? 'Aporte em reserva';
+        $notes = $body['notes'] ?? 'Alocação de saldo livre (Dar Destino)';
 
-        if ($amount <= 0) {
-            return $this->error("O valor do aporte deve ser maior que zero.", 422);
+        try {
+            $result = ReserveService::allocate($orgId, (int) $id, $amount, $accountId, $date, $notes);
+            return $this->json([
+                'message' => 'Saldo alocado com sucesso! Todo dinheiro agora tem um destino.',
+                'data' => $result
+            ]);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
+    }
+
+    /**
+     * POST /reserves/{id}/withdraw
+     * Resgate financeiro para conta corrente
+     */
+    public function post_withdraw($id)
+    {
+        $orgId = $this->getActiveOrgId();
+        $body = $this->request->getJson();
+
+        $amount = (float) ($body['amount'] ?? 0.0);
+        $destAccountId = (int) ($body['destination_account_id'] ?? 0);
+        $date = $body['date'] ?? date('Y-m-d');
+        $reason = $body['reason'] ?? 'Resgate de reserva';
+
+        if (!$destAccountId || $amount <= 0) {
+            return $this->error("Informe a conta de destino e o valor do resgate.", 422);
         }
 
-        // Verifica reserva
-        $stmt = Model::query("SELECT * FROM reserves WHERE id = ? AND organization_id = ?", [$id, $orgId]);
-        $reserve = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$reserve) {
-            return $this->error("Reserva não encontrada.", 404);
+        try {
+            $result = ReserveService::withdraw($orgId, (int) $id, $amount, $destAccountId, $date, $reason);
+            return $this->json([
+                'message' => 'Resgate realizado com sucesso!',
+                'data' => $result
+            ]);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 400);
         }
+    }
 
-        // Incrementa saldo da reserva
-        Model::query("UPDATE reserves SET current_amount = current_amount + ? WHERE id = ?", [$amount, $id]);
-
-        // Debita da conta caso informada
-        if ($accountId) {
-            Model::query("UPDATE accounts SET current_balance = current_balance - ? WHERE id = ? AND organization_id = ?", [$amount, $accountId, $orgId]);
-        }
-
-        // Registra movimentação do tipo reserve_deposit
-        Model::query(
-            "INSERT INTO transactions (organization_id, user_id, account_id, reserve_id, type, description, amount_expected, amount_effective, competence_date, due_date, payment_date, status, has_origin, has_destination, notes)
-             VALUES (?, 1, ?, ?, 'reserve_deposit', ?, ?, ?, ?, ?, ?, 'effective', 1, 1, ?)",
-            [$orgId, $accountId, $id, "Aporte em " . $reserve['name'], $amount, $amount, $date, $date, $date, $notes]
-        );
-
-        return $this->json(['message' => 'Aporte realizado com sucesso!']);
+    /**
+     * POST /reserves/{id}/deposit
+     */
+    public function post_deposit($id)
+    {
+        return $this->post_allocate($id);
     }
 }
