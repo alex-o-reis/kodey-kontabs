@@ -68,6 +68,7 @@ $version = 'v=' . KORE_VERSION;
         }
     }
     includeUserScripts('app/renderers', $version);
+    includeUserScripts('app/services', $version);
     includeUserScripts('app/models', $version);
     includeUserScripts('app/controllers', $version);
     includeUserScripts('app/views', $version);

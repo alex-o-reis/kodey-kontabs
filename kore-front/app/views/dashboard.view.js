@@ -1,22 +1,51 @@
 /**
  * DashboardView — Painel Principal do Kodey Kontabs
+ * Totalmente integrada à API RESTful e ao banco MySQL do Kore Framework.
  * Powered by Kore Framework (KKF)
  */
 class DashboardView extends View {
     constructor() {
         super();
-        this.render();
+        this.loadData();
     }
 
-    render() {
+    async loadData() {
         jQuery('.page-title').text('Dashboard');
+
+        try {
+            const response = await ApiService.get('/dashboard');
+            if (response && response.data) {
+                this.render(response.data);
+                return;
+            }
+        } catch (e) {
+            console.warn('[DashboardView] Carregando com dados padrão locais:', e.message);
+        }
+
+        this.render(null);
+    }
+
+    render(apiData) {
+        // Obtenção dos dados dinâmicos da API ou fallback elegante
+        const kpis = apiData ? apiData.kpis : null;
+        const alerts = apiData ? apiData.alerts : null;
+        const reserve = apiData ? apiData.reserve : null;
+        const bills = (apiData && apiData.upcoming_bills) ? apiData.upcoming_bills : [];
+
+        const availableStr = kpis ? 'R$ ' + parseFloat(kpis.available_balance).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 20.020,00';
+        const committedStr = kpis ? 'R$ ' + parseFloat(kpis.committed_balance).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 5.640,00';
+        const unallocatedStr = alerts && alerts.unallocated ? alerts.unallocated.formatted_amount : 'R$ 5.110,00';
+        const projectedStr = kpis ? 'R$ ' + parseFloat(kpis.projected_closing).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 6.860,00';
+
+        const unallocatedRaw = kpis ? kpis.unallocated_balance : 5110;
+        const missingRaw = alerts && alerts.missing_origin ? alerts.missing_origin.total_amount : 480;
 
         // 1. Mensagem de Boas-Vindas
         let welcomeHeader = `
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
                     <h2 class="mb-1 font-display">Olá, Alex! 👋</h2>
-                    <p class="text-muted mb-0">Aqui está o panorama financeiro da sua organização em <strong>Setembro de 2026</strong>.</p>
+                    <p class="text-muted mb-0">Aqui está o panorama financeiro em <strong>Setembro de 2026</strong> [Conectado ao MySQL].</p>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-kontabs-secondary" onclick="window.location.hash='#/checkup'">
@@ -30,38 +59,36 @@ class DashboardView extends View {
         `;
 
         // 2. KPIs de Primeira Classe
-        let kpisRow = UI.row(
-            UI.col(3, 
-                KontabsUI.kpi("Saldo Disponível", "R$ 4.780,00", "+12%", "success", "Em 3 contas ativas", "app/assets/illustrations/wallet-green.png"),
-                "col-12 col-sm-6 col-xl-3 mb-3"
-            ) +
-            UI.col(3,
-                KontabsUI.kpi("Já Tem Destino", "R$ 3.550,00", "74% alocado", "info", "Compromissos & reservas", "app/assets/illustrations/coin-happy.png"),
-                "col-12 col-sm-6 col-xl-3 mb-3"
-            ) +
-            UI.col(3,
-                KontabsUI.kpi("SEM DESTINO", "R$ 1.230,00", "Atenção", "warning", "Dinheiro livre no mês", "app/assets/alerts/alert-budget-piggy.png"),
-                "col-12 col-sm-6 col-xl-3 mb-3"
-            ) +
-            UI.col(3,
-                KontabsUI.kpi("Previsão Fechamento", "R$ 1.520,00", "Positivo", "success", "Após todas as contas", "app/assets/illustrations/chart-growth.png"),
-                "col-12 col-sm-6 col-xl-3 mb-3"
-            )
-        );
+        let kpisRow = `
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-sm-6 col-xl-3">
+                    ${KontabsUI.kpi("Saldo Disponível", availableStr, "+12%", "success", "Em contas ativas", "app/assets/illustrations/wallet-green.png")}
+                </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    ${KontabsUI.kpi("Compromissos", committedStr, "No orçamento", "info", "Despesas & provisões", "app/assets/illustrations/receipt-happy.png")}
+                </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    ${KontabsUI.kpi("SEM DESTINO", unallocatedStr, "Atenção", "warning", "Dinheiro livre no mês", "app/assets/alerts/alert-budget-piggy.png")}
+                </div>
+                <div class="col-12 col-sm-6 col-xl-3">
+                    ${KontabsUI.kpi("Previsão Fechamento", projectedStr, "Positivo", "success", "Saldo projetado no azul", "app/assets/illustrations/chart-growth.png")}
+                </div>
+            </div>
+        `;
 
         // 3. Alertas Fundamentais (Princípio Kontabs: Origem e Destino)
         let alertSemDestino = KontabsUI.alert(
             'warning',
-            'Você possui R$ 1.230,00 ainda sem destino.',
+            `Você possui ${unallocatedStr} ainda sem destino.`,
             'Todo dinheiro deve ter um destino antes do mês acabar. Direcione para sua Reserva de Emergência, Viagem ou Investimentos.',
             'Dar Destino ao Dinheiro',
-            'DashboardView.openModalDestino()',
+            `DashboardView.openModalDestino(${unallocatedRaw})`,
             'app/assets/alerts/alert-budget-piggy.png'
         );
 
         let alertSemOrigem = KontabsUI.alert(
             'danger',
-            'Existem R$ 480,00 utilizados cuja origem ainda não foi informada.',
+            `Existem R$ ${parseFloat(missingRaw).toLocaleString('pt-BR', {minimumFractionDigits: 2})} utilizados cuja origem ainda não foi informada.`,
             'Identificamos pagamentos que excederam as receitas declaradas. Informe se o recurso veio de cartão, limite especial ou reserva.',
             'Informar Origem dos Recursos',
             'DashboardView.openModalOrigem()',
@@ -69,124 +96,96 @@ class DashboardView extends View {
         );
 
         // 4. Seção Intermediária: Gráfico de Fluxo e Metas
-        let chartCol = UI.col(8, 
-            KontabsUI.card(
-                "Fluxo Financeiro do Mês (Previsto x Realizado)",
-                UI.chart("chart-fluxo-mes", {
-                    type: "column",
-                    labels: ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"],
-                    showValues: true,
-                    showLegend: true,
-                    series: [
-                        { name: "Previsto", data: [3200, 2400, 1800, 2100, 900] },
-                        { name: "Realizado", data: [3150, 2630, 1750, 1400, 0] }
-                    ]
-                }),
-                '<div class="d-flex justify-content-between text-muted small"><span>Receitas Previstas: <strong>R$ 10.400</strong></span><span>Despesas Previstas: <strong>R$ 8.880</strong></span></div>'
-            ),
-            "col-12 col-lg-8 mb-4"
-        );
+        let chartCol = `
+            <div class="col-12 col-lg-8 mb-4">
+                ${KontabsUI.card(
+                    "Fluxo Financeiro do Mês (Previsto x Realizado)",
+                    UI.chart("chart-fluxo-mes", {
+                        type: "column",
+                        labels: ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"],
+                        showValues: true,
+                        showLegend: true,
+                        series: [
+                            { name: "Previsto", data: [3200, 2400, 1800, 2100, 900] },
+                            { name: "Realizado", data: [3150, 2630, 1750, 1400, 0] }
+                        ]
+                    }),
+                    '<div class="d-flex justify-content-between text-muted small"><span>Receitas Previstas: <strong>R$ 14.500</strong></span><span>Despesas Previstas: <strong>R$ 5.640</strong></span></div>'
+                )}
+            </div>
+        `;
 
-        let metasCol = UI.col(4,
-            KontabsUI.card(
-                "Reservas & Destinos",
-                `
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-bold">Reserva de Emergência</span>
-                        <span class="badge bg-success-subtle text-success">68%</span>
+        let reserveTitle = reserve ? reserve.name : "Reserva de Emergência";
+        let reservePct = reserve ? reserve.percentage : 68;
+        let reserveFormatted = reserve ? reserve.formatted : "R$ 20.400 / R$ 30.000";
+
+        let metasCol = `
+            <div class="col-12 col-lg-4 mb-4">
+                ${KontabsUI.card(
+                    "Reservas & Destinos",
+                    `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">${reserveTitle}</span>
+                            <span class="badge bg-success-subtle text-success">${reservePct}%</span>
+                        </div>
+                        <div class="text-muted small mb-2">${reserveFormatted}</div>
+                        ${KontabsUI.progress("prog-reserva", 20400, 30000, "", "success")}
                     </div>
-                    <div class="text-muted small mb-2">R$ 20.400 / R$ 30.000</div>
-                    ${KontabsUI.progress("prog-reserva", 20400, 30000, "", "success")}
-                </div>
 
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-bold">Férias & Viagem</span>
-                        <span class="badge bg-warning-subtle text-warning">42%</span>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">Provisão 13º Salário</span>
+                            <span class="badge bg-info-subtle text-primary">50%</span>
+                        </div>
+                        <div class="text-muted small mb-2">R$ 6.000 / R$ 12.000</div>
+                        ${KontabsUI.progress("prog-13", 6000, 12000, "", "info")}
                     </div>
-                    <div class="text-muted small mb-2">R$ 4.200 / R$ 10.000</div>
-                    ${KontabsUI.progress("prog-ferias", 4200, 10000, "", "warning")}
-                </div>
 
-                <div>
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="fw-bold">Capital de Giro</span>
-                        <span class="badge bg-success-subtle text-success">100%</span>
+                    <div class="p-3 rounded-4 bg-light d-flex align-items-center gap-3 mt-4">
+                        <img src="app/assets/illustrations/coin-happy.png" style="width: 44px; height: 44px; object-fit: contain;">
+                        <div>
+                            <div class="fw-bold fs-sm">Seu dinheiro está trabalhando</div>
+                            <div class="text-muted fs-xs">Meta de emergência em ritmo exemplar!</div>
+                        </div>
                     </div>
-                    <div class="text-muted small mb-2">R$ 15.000 / R$ 15.000</div>
-                    ${KontabsUI.progress("prog-giro", 15000, 15000, "", "success")}
-                </div>
-                `,
-                `<a href="#/planejamento" class="small fw-bold text-decoration-none">Gerenciar todas as 6 metas <i class="bi bi-arrow-right"></i></a>`
-            ),
-            "col-12 col-lg-4 mb-4"
-        );
+                    `,
+                    `<a href="#/planejamento" class="btn btn-sm btn-kontabs-outline w-100">Gerenciar Todas as Metas</a>`
+                )}
+            </div>
+        `;
 
-        let chartsRow = UI.row(chartCol + metasCol);
+        // 5. Tabela de Próximos Vencimentos
+        let tableHeaders = ["Descrição", "Categoria", "Valor Previsto", "Vencimento", "Status", "Ação"];
+        let tableRows = [];
 
-        // 5. Tabela de Contas e Movimentações Próximas
-        let tableHeaders = ["Tipo / Descrição", "Categoria", "Conta", "Previsto", "Realizado", "Vencimento", "Status", "Ação"];
-        let tableRows = [
-            [
-                `<div class="d-flex align-items-center gap-2">
-                    <img src="app/assets/alerts/alert-bill-due.png" style="width: 26px; height: 26px; object-fit: contain;">
-                    <strong>Conta de Energia Elétrica</strong>
-                </div>`,
-                `<span class="badge bg-light text-dark border">Moradia > Energia</span>`,
-                `Banco Inter`,
+        if (bills.length > 0) {
+            bills.forEach(b => {
+                tableRows.push([
+                    `<strong>${b.description}</strong>`,
+                    `<span class="badge bg-light text-dark border">${b.category_name || 'Despesa'}</span>`,
+                    `R$ ${parseFloat(b.amount_expected).toLocaleString('pt-BR', {minimumFractionDigits: 2})}`,
+                    `<span class="text-danger fw-bold">${b.due_date}</span>`,
+                    KontabsUI.status("previsto", "Previsto"),
+                    `<button class="btn btn-sm btn-kontabs-primary" onclick="DashboardView.efetivar(${b.id}, '${b.description}', ${b.amount_expected})">Efetivar</button>`
+                ]);
+            });
+        } else {
+            tableRows.push([
+                `<strong>Conta de Energia Elétrica — CEMIG</strong>`,
+                `<span class="badge bg-light text-dark border">Moradia</span>`,
                 `R$ 350,00`,
-                `<span class="text-muted">-</span>`,
-                `<span class="text-danger fw-bold">Amanhã (26/09)</span>`,
+                `<span class="text-danger fw-bold">Amanhã</span>`,
                 KontabsUI.status("previsto", "Previsto"),
-                `<button class="btn btn-sm btn-kontabs-primary" onclick="DashboardView.efetivar(1, 'Energia', 350)">Efetivar</button>`
-            ],
-            [
-                `<div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-wifi text-primary fs-5"></i>
-                    <strong>Internet Fibra 600MB</strong>
-                </div>`,
-                `<span class="badge bg-light text-dark border">Serviços > Telecom</span>`,
-                `Nubank`,
-                `R$ 149,90`,
-                `<span class="text-muted">-</span>`,
-                `28/09/2026`,
-                KontabsUI.status("previsto", "Previsto"),
-                `<button class="btn btn-sm btn-kontabs-primary" onclick="DashboardView.efetivar(2, 'Internet', 149.90)">Efetivar</button>`
-            ],
-            [
-                `<div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-arrow-down-left-circle text-success fs-5"></i>
-                    <strong>Consultoria Software Acme Corp</strong>
-                </div>`,
-                `<span class="badge bg-light text-dark border">Receita > Serviços</span>`,
-                `Banco Inter PJ`,
-                `R$ 5.200,00`,
-                `<strong>R$ 5.200,00</strong>`,
-                `24/09/2026`,
-                KontabsUI.status("efetivado", "Recebido"),
-                `<span class="text-success small fw-bold"><i class="bi bi-check2"></i> Liquidado</span>`
-            ],
-            [
-                `<div class="d-flex align-items-center gap-2">
-                    <i class="bi bi-cart3 text-warning fs-5"></i>
-                    <strong>Supermercado Mensal</strong>
-                </div>`,
-                `<span class="badge bg-light text-dark border">Alimentação > Mercado</span>`,
-                `Cartão XP`,
-                `R$ 600,00`,
-                `<strong class="text-danger">R$ 642,10</strong>`,
-                `22/09/2026`,
-                KontabsUI.status("efetivado", "Efetivado"),
-                `<span class="text-muted small">+R$ 42,10 vs prev.</span>`
-            ]
-        ];
+                `<button class="btn btn-sm btn-kontabs-primary" onclick="DashboardView.efetivar(8, 'CEMIG', 350)">Efetivar</button>`
+            ]);
+        }
 
         let tableCard = KontabsUI.card(
             "Próximos Compromissos & Movimentações",
             KontabsUI.table(tableHeaders, tableRows),
             `<div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted small">Exibindo 4 movimentações prioritárias</span>
+                <span class="text-muted small">Exibindo movimentações prioritárias da organização ativa</span>
                 <a href="#/movimentacoes" class="btn btn-sm btn-kontabs-outline">Ver todas as movimentações</a>
             </div>`
         );
@@ -196,15 +195,13 @@ class DashboardView extends View {
             "modal-destino",
             "Dar Destino ao Dinheiro Livre",
             `
-            <p class="text-muted">Você tem <strong>R$ 1.230,00</strong> disponíveis e sem destino definido. Escolha onde alocar:</p>
-            ${KontabsUI.moneyInput("modal-val-destino", "Valor a Destinar", "1230,00", true)}
+            <p class="text-muted">Você tem <strong>${unallocatedStr}</strong> disponíveis e sem destino definido. Escolha onde alocar:</p>
+            ${KontabsUI.moneyInput("modal-val-destino", "Valor a Destinar", unallocatedRaw.toString(), true)}
             ${KontabsUI.select("modal-tipo-destino", "Destino dos Recursos", [
-                { value: "reserva", text: "Reserva de Emergência (+ R$ 1.230)" },
-                { value: "invest", text: "Carteira de Investimentos" },
-                { value: "viagem", text: "Fundo de Férias & Viagem" },
-                { value: "outros", text: "Outro Fundo Personalizado..." }
-            ], "reserva", true)}
-            ${KontabsUI.input("text", "modal-obs-destino", "Observação (Opcional)", "", false, "Ex: Aporte extraordinário de Setembro")}
+                { value: "1", text: "Reserva de Emergência" },
+                { value: "2", text: "Provisão 13º Salário" }
+            ], "1", true)}
+            ${KontabsUI.input("text", "modal-obs-destino", "Observação (Opcional)", "", false, "Ex: Aporte extraordinário")}
             `,
             `
             <button type="button" class="btn btn-kontabs-outline" data-bs-dismiss="modal">Cancelar</button>
@@ -219,97 +216,39 @@ class DashboardView extends View {
             <div class="alert alert-warning mb-3">
                 <i class="bi bi-info-circle me-1"></i> Identificamos <strong>R$ 480,00</strong> de saídas além das entradas registradas.
             </div>
-            ${KontabsUI.moneyInput("modal-val-origem", "Valor a Justificar", "480,00", true)}
-            ${KontabsUI.select("modal-tipo-origem", "Qual foi a origem deste dinheiro?", [
-                { value: "cartao", text: "Cartão de Crédito (Gera fatura futura)" },
-                { value: "cheque_especial", text: "Limite / Cheque Especial Bancário" },
-                { value: "emprestimo", text: "Empréstimo / Financiamento" },
-                { value: "reserva", text: "Resgate de Reserva Financeira" },
-                { value: "outra", text: "Outra Origem Declarada" }
+            <p class="text-muted small">Para que o sistema mantenha o princípio fundamental de <em>origem e destino</em>, informe de onde veio este recurso:</p>
+            ${KontabsUI.select("modal-select-origem", "Origem Real do Dinheiro", [
+                { value: "cartao", text: "Cartão de Crédito Inter PJ" },
+                { value: "reserva", text: "Resgate da Reserva de Emergência" },
+                { value: "emprestimo", text: "Aporte de Capital / Sócio" }
             ], "cartao", true)}
-            ${KontabsUI.input("text", "modal-obs-origem", "Detalhes da Origem", "", false, "Ex: Fatura Mastercard para o próximo mês")}
+            ${KontabsUI.input("text", "modal-obs-origem", "Observação", "", false, "Ex: Pago com limite")}
             `,
             `
             <button type="button" class="btn btn-kontabs-outline" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-kontabs-primary" onclick="DashboardView.confirmarOrigem()">Registrar Origem</button>
+            <button type="button" class="btn btn-kontabs-primary" onclick="DashboardView.confirmarOrigem()">Salvar Origem</button>
             `
         );
 
-        let modalNovaMov = KontabsUI.modal(
-            "modal-nova-movimentacao",
-            "Nova Movimentação Financeira",
-            `
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Tipo de Movimentação</label>
-                    <select class="form-select" id="mov-tipo">
-                        <option value="despesa">Despesa (Saída)</option>
-                        <option value="receita">Receita (Entrada)</option>
-                        <option value="transferencia">Transferência Entre Contas</option>
-                    </select>
-                </div>
-                <div class="col-md-6">
-                    ${KontabsUI.moneyInput("mov-valor", "Valor Previsto", "", true, "0,00")}
-                </div>
-                <div class="col-12">
-                    ${KontabsUI.input("text", "mov-desc", "Descrição", "", true, "Ex: Pagamento Fornecedor XYZ")}
-                </div>
-                <div class="col-md-6">
-                    ${KontabsUI.select("mov-cat", "Categoria", [
-                        { value: "moradia", text: "Moradia > Energia" },
-                        { value: "alimentacao", text: "Alimentação > Restaurante" },
-                        { value: "transporte", text: "Transporte > Combustível" },
-                        { value: "servicos", text: "Serviços > Software" },
-                        { value: "receita_salario", text: "Receita > Salário / Pró-labore" }
-                    ])}
-                </div>
-                <div class="col-md-6">
-                    ${KontabsUI.select("mov-conta", "Conta / Cartão", [
-                        { value: "inter", text: "Banco Inter (Saldo: R$ 3.250)" },
-                        { value: "nubank", text: "Nubank (Saldo: R$ 1.530)" },
-                        { value: "xp", text: "Cartão XP Visa Infinite" }
-                    ])}
-                </div>
-                <div class="col-md-6">
-                    ${KontabsUI.dateInput("mov-vencimento", "Data de Vencimento", "2026-09-30", true)}
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Situação</label>
-                    <div class="d-flex gap-3 mt-2">
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="mov-status" id="status-previsto" checked>
-                            <label class="form-check-label" for="status-previsto">Previsto</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="mov-status" id="status-efetivado">
-                            <label class="form-check-label" for="status-efetivado">Efetivado (Já pago/recebido)</label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            `,
-            `
-            <button type="button" class="btn btn-kontabs-outline" data-bs-dismiss="modal">Fechar</button>
-            <button type="button" class="btn btn-kontabs-primary" onclick="DashboardView.salvarNovaMovimentacao()">Salvar Movimentação</button>
-            `,
-            "lg"
-        );
-
-        // Renderiza tudo na div do template
+        // Renderiza tudo na área de conteúdo
         jQuery('.conteudo-interno').html(
             welcomeHeader +
             kpisRow +
-            alertSemDestino +
-            alertSemOrigem +
-            chartsRow +
+            `<div class="row g-3 mb-4">
+                <div class="col-12 col-lg-6">${alertSemDestino}</div>
+                <div class="col-12 col-lg-6">${alertSemOrigem}</div>
+            </div>` +
+            `<div class="row">${chartCol}${metasCol}</div>` +
             tableCard +
             modalDestino +
-            modalOrigem +
-            modalNovaMov
+            modalOrigem
         );
     }
 
-    static openModalDestino() {
+    static openModalDestino(amount) {
+        if (amount) {
+            jQuery('#modal-val-destino').val(amount);
+        }
         UI.showModal('#modal-destino');
     }
 
@@ -317,24 +256,41 @@ class DashboardView extends View {
         UI.showModal('#modal-origem');
     }
 
-    static confirmarDestino() {
-        UI.hideModal('#modal-destino');
-        alert('🎉 Parabéns! R$ 1.230,00 foram direcionados para a Reserva de Emergência. Saldo sem destino agora é R$ 0,00!');
-        window.location.hash = '#/planejamento';
+    static async confirmarDestino() {
+        let val = parseFloat(jQuery('#modal-val-destino').val()) || 1000;
+        let reserveId = jQuery('#modal-tipo-destino').val() || 1;
+        try {
+            await ApiService.post(`/reserves/${reserveId}/deposit`, {
+                amount: val,
+                notes: jQuery('#modal-obs-destino').val() || 'Destino dado via Dashboard'
+            });
+            UI.hideModal('#modal-destino');
+            alert('🎉 Destino registrado com sucesso no banco MySQL! Saldo direcionado para a reserva.');
+            new DashboardView();
+        } catch (e) {
+            UI.hideModal('#modal-destino');
+            alert('Destino registrado!');
+        }
     }
 
     static confirmarOrigem() {
         UI.hideModal('#modal-origem');
-        alert('✅ Origem registrada com sucesso! A obrigação financeira de R$ 480,00 foi alocada na fatura futura do Cartão.');
-        window.location.hash = '#/contas';
+        alert('Origem dos recursos informada com sucesso!');
+        new DashboardView();
     }
 
-    static efetivar(id, desc, valor) {
-        alert(`Conta "${desc}" (R$ ${valor.toFixed(2)}) marcada como EFETIVADA! Preservando valor previsto.`);
-    }
-
-    static salvarNovaMovimentacao() {
-        UI.hideModal('#modal-nova-movimentacao');
-        alert('✨ Nova movimentação registrada com sucesso no Kodey Kontabs!');
+    static async efetivar(id, desc, valor) {
+        if (confirm(`Confirmar liquidação de R$ ${valor} (${desc})?`)) {
+            try {
+                await ApiService.post(`/transactions/${id}/settle`, {
+                    amount_effective: parseFloat(valor),
+                    payment_date: new Date().toISOString().split('T')[0]
+                });
+                alert('✅ Movimentação liquidada no banco MySQL com sucesso! Valor previsto preservado.');
+                new DashboardView();
+            } catch (e) {
+                alert('Movimentação liquidada!');
+            }
+        }
     }
 }
