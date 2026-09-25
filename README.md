@@ -138,9 +138,9 @@ Explore as principais seções navegáveis já ativas na Fase 1:
 - [x] **Fase 3 — Autenticação, Alternância Multi-Organização (PF/PJ) e Segurança**
 - [x] **Fase 4 — Núcleo de Movimentações, Despesas Parceladas e Contas Financeiras**
 - [x] **Fase 5 — Importação de Extratos Bancários (OFX / CSV) e Motor de Conciliação Inteligente**
-- [ ] **Fase 6 — Gestão de Cartões de Crédito e Fechamento de Faturas**
-- [ ] **Fase 7 — Planejamento Mensal, Provisionamentos e Envelopes de Gastos**
-- [ ] **Fase 8 — Motor de Projeção Financeira e Fluxo de Caixa Futuro (7d, 30d, 12m)**
+- [x] **Fase 6 — Gestão de Cartões de Crédito, Limites e Fechamento de Faturas**
+- [x] **Fase 7 — Planejamento Mensal, Provisionamentos e Envelopes de Gastos por Categoria**
+- [x] **Fase 8 — Motor de Projeção Financeira e Fluxo de Caixa Futuro (7d, 30d, 90d, 12m)**
 - [ ] **Fase 9 — Inteligência Financeira e Detecção Proativa de Padrões e Anomalias**
 
 ---
