@@ -134,17 +134,14 @@ Explore as principais seções navegáveis já ativas na Fase 1:
 ## 🗺️ Roadmap de Desenvolvimento
 
 - [x] **Fase 1 — Estrutura do Sistema, Layout e Camada de Renderização Kontabs**
-- [ ] **Fase 2 — Backend e Modelo de Dados (MySQL db.opn1.net / kontabs)**
-- [ ] **Fase 3 — Autenticação, Multi-Organização e Segurança**
-- [ ] **Fase 4 — Núcleo de Movimentações e Contas Financeiras**
-- [ ] **Fase 5 — Contas a Pagar e Contas a Receber**
-- [ ] **Fase 6 — Gestão de Cartões de Crédito e Faturas**
-- [ ] **Fase 7 — Planejamento, Provisionamentos e Envelopes**
-- [ ] **Fase 8 — Dashboard Real e Meu Mês**
-- [ ] **Fase 9 — Check-up Financeiro Proativo**
-- [ ] **Fase 10 — Motor de Projeção e Fluxo de Caixa Futuro**
-- [ ] **Fase 11 — Importação de Extratos (OFX, CSV) e Conciliação**
-- [ ] **Fase 12 — Inteligência Financeira e Detecção de Padrões**
+- [x] **Fase 2 — Backend e Modelo de Dados Relacional MySQL (`db.opn1.net / kontabs`)**
+- [x] **Fase 3 — Autenticação, Alternância Multi-Organização (PF/PJ) e Segurança**
+- [x] **Fase 4 — Núcleo de Movimentações, Despesas Parceladas e Contas Financeiras**
+- [x] **Fase 5 — Importação de Extratos Bancários (OFX / CSV) e Motor de Conciliação Inteligente**
+- [ ] **Fase 6 — Gestão de Cartões de Crédito e Fechamento de Faturas**
+- [ ] **Fase 7 — Planejamento Mensal, Provisionamentos e Envelopes de Gastos**
+- [ ] **Fase 8 — Motor de Projeção Financeira e Fluxo de Caixa Futuro (7d, 30d, 12m)**
+- [ ] **Fase 9 — Inteligência Financeira e Detecção Proativa de Padrões e Anomalias**
 
 ---
 
