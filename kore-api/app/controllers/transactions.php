@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../kore/Controller.php';
 require_once __DIR__ . '/../models/Transaction.php';
+require_once __DIR__ . '/../services/ConciliationService.php';
 
 class Transactions extends Controller
 {
@@ -130,6 +131,8 @@ class Transactions extends Controller
         $hasDestination = isset($body['has_destination']) ? (int) $body['has_destination'] : 1;
         $notes = $body['notes'] ?? null;
 
+        $installmentsTotal = (int) ($body['installments_total'] ?? 1);
+
         if (empty($description)) {
             return $this->error("A descrição da movimentação é obrigatória.", 422);
         }
@@ -137,7 +140,37 @@ class Transactions extends Controller
             return $this->error("O valor deve ser maior que zero.", 422);
         }
 
-        // Se marcada como efetivada e sem payment_date, atribui a data de hoje
+        // Caso Parcelado: gera N parcelas
+        if ($installmentsTotal > 1) {
+            $installmentAmount = round($amountExpected / $installmentsTotal, 2);
+            $createdIds = [];
+
+            for ($i = 1; $i <= $installmentsTotal; $i++) {
+                $monthOffset = $i - 1;
+                $instDueDate = date('Y-m-d', strtotime("+$monthOffset month", strtotime($dueDate)));
+                $instCompDate = date('Y-m-01', strtotime("+$monthOffset month", strtotime($competenceDate)));
+                $instDesc = "$description ($i/$installmentsTotal)";
+
+                $instStatus = ($i === 1 && $status === 'effective') ? 'effective' : 'expected';
+                $instPaymentDate = ($instStatus === 'effective') ? ($paymentDate ?? date('Y-m-d')) : null;
+                $instAmountEff = ($instStatus === 'effective') ? $installmentAmount : null;
+
+                Model::query(
+                    "INSERT INTO transactions (organization_id, user_id, account_id, credit_card_id, category_id, reserve_id, type, description, amount_expected, amount_effective, competence_date, due_date, payment_date, status, has_origin, has_destination, installment_current, installment_total, notes)
+                     VALUES (?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [$orgId, $accountId, $creditCardId, $categoryId, $reserveId, $type, $instDesc, $installmentAmount, $instAmountEff, $instCompDate, $instDueDate, $instPaymentDate, $instStatus, $hasOrigin, $hasDestination, $i, $installmentsTotal, $notes]
+                );
+                $createdIds[] = (int) Model::getPdo()->lastInsertId();
+            }
+
+            return $this->json([
+                'message' => "Compra parcelada em {$installmentsTotal}x registrada com sucesso!",
+                'ids' => $createdIds,
+                'installment_amount' => $installmentAmount
+            ], 201);
+        }
+
+        // Lançamento normal à vista
         if ($status === 'effective' && empty($paymentDate)) {
             $paymentDate = date('Y-m-d');
         }
@@ -199,5 +232,74 @@ class Transactions extends Controller
             'amount_effective' => $amountEffective,
             'payment_date' => $paymentDate
         ]);
+    }
+
+    /**
+     * POST /transactions/import
+     * Processa extrato bancário (OFX ou CSV) e retorna correspondências (matching).
+     */
+    public function post_import()
+    {
+        $orgId = $this->getActiveOrgId();
+        $body = $this->request->getJson();
+
+        $accountId = (int) ($body['account_id'] ?? 0);
+        $format = strtolower($body['format'] ?? 'ofx');
+        $rawContent = $body['content'] ?? '';
+
+        if (!$accountId) {
+            return $this->error("Selecione a conta bancária para conciliação.", 422);
+        }
+        if (empty($rawContent)) {
+            return $this->error("Conteúdo do arquivo de extrato não enviado.", 422);
+        }
+
+        if ($format === 'ofx') {
+            $parsed = ConciliationService::parseOfx($rawContent);
+        } else {
+            $parsed = ConciliationService::parseCsv($rawContent);
+        }
+
+        if (empty($parsed)) {
+            return $this->error("Nenhuma transação válida identificada no extrato fornecido.", 422);
+        }
+
+        $matched = ConciliationService::matchTransactions($orgId, $accountId, $parsed);
+
+        return $this->json([
+            'message' => 'Extrato processado com sucesso!',
+            'data' => [
+                'account_id' => $accountId,
+                'total_items' => count($matched),
+                'items' => $matched
+            ]
+        ]);
+    }
+
+    /**
+     * POST /transactions/reconcile
+     * Aplica em lote as ações aprovadas de conciliação.
+     */
+    public function post_reconcile()
+    {
+        $orgId = $this->getActiveOrgId();
+        $body = $this->request->getJson();
+
+        $accountId = (int) ($body['account_id'] ?? 0);
+        $items = $body['items'] ?? [];
+
+        if (!$accountId || empty($items)) {
+            return $this->error("Informe a conta e a lista de itens para conciliação.", 422);
+        }
+
+        try {
+            $result = ConciliationService::processReconciliation($orgId, $accountId, $items);
+            return $this->json([
+                'message' => 'Conciliação bancária concluída com sucesso!',
+                'data' => $result
+            ]);
+        } catch (Exception $e) {
+            return $this->error($e->getMessage(), 400);
+        }
     }
 }

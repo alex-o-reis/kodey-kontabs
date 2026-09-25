@@ -18,7 +18,8 @@ const KoreConfig = {
         { url: '#/financeiro', controller: 'FinanceiroController' },
         { url: '#/checkup', controller: 'CheckupController' },
         { url: '#/relatorios', controller: 'RelatoriosController' },
-        { url: '#/showcase', controller: 'ShowcaseController' }
+        { url: '#/showcase', controller: 'ShowcaseController' },
+        { url: '#/login', controller: 'LoginController' }
     ],
 
     // Menu Lateral Oficial do Kontabs

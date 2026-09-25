@@ -137,6 +137,14 @@ class Request
     }
 
     /**
+     * Get JSON / POST decoded payload
+     */
+    public function getJson(): array
+    {
+        return $this->post;
+    }
+
+    /**
      * Get uploaded file info
      */
     public function file($key = null)

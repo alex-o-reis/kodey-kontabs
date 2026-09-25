@@ -7,11 +7,12 @@ class Auth extends Controller
 {
     public function post_login()
     {
-        $username = $this->request->input('username');
-        $password = $this->request->input('password');
+        $body = $this->request->getJson();
+        $username = trim($body['username'] ?? $this->request->input('username') ?? '');
+        $password = $body['password'] ?? $this->request->input('password') ?? '';
 
         if (!$username || !$password) {
-            return $this->error('Username e password são obrigatórios.', 400);
+            return $this->error('Informe o usuário/e-mail e a senha.', 400);
         }
 
         try {
@@ -23,14 +24,36 @@ class Auth extends Controller
                 Model::query("UPDATE users SET token = ? WHERE id = ?", [$token, $user['id']]);
 
                 unset($user['password']);
+
+                // Busca organizações do usuário
+                $stmtOrgs = Model::query(
+                    "SELECT o.*, ou.role, ou.is_default 
+                     FROM organizations o
+                     INNER JOIN organization_users ou ON ou.organization_id = o.id
+                     WHERE ou.user_id = ? AND o.is_active = 1
+                     ORDER BY ou.is_default DESC, o.name ASC",
+                    [$user['id']]
+                );
+                $orgs = $stmtOrgs->fetchAll(PDO::FETCH_ASSOC);
+
+                // Se não tiver vínculo explícito em organization_users, busca todas as ativas
+                if (empty($orgs)) {
+                    $stmtAll = Model::query("SELECT *, 'owner' as role, 1 as is_default FROM organizations WHERE is_active = 1 ORDER BY id ASC");
+                    $orgs = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+                }
+
+                $activeOrg = !empty($orgs) ? $orgs[0] : null;
+
                 return $this->json([
-                    'message' => 'Login realizado com sucesso',
+                    'message' => 'Login realizado com sucesso!',
                     'token' => $token,
-                    'user' => $user
+                    'user' => $user,
+                    'organizations' => $orgs,
+                    'active_organization' => $activeOrg
                 ]);
             }
         } catch (Exception $e) {
-            // Se tabela não existir ainda ou der erro
+            return $this->error($e->getMessage(), 500);
         }
 
         return $this->error('Usuário ou senha inválidos.', 401);
@@ -40,6 +63,15 @@ class Auth extends Controller
     {
         $token = $this->request->bearerToken();
         if (!$token) {
+            // Tenta pegar do cookie ou header customizado
+            $headers = function_exists('getallheaders') ? getallheaders() : [];
+            $authHeader = $headers['Authorization'] ?? '';
+            if (preg_match('/Bearer\s+(.*)$/i', $authHeader, $matches)) {
+                $token = $matches[1];
+            }
+        }
+
+        if (!$token) {
             return $this->error('Não autenticado.', 401);
         }
 
@@ -48,10 +80,49 @@ class Auth extends Controller
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user) {
-                return $this->json(['user' => $user]);
+                $stmtOrgs = Model::query(
+                    "SELECT o.*, ou.role, ou.is_default 
+                     FROM organizations o
+                     INNER JOIN organization_users ou ON ou.organization_id = o.id
+                     WHERE ou.user_id = ? AND o.is_active = 1
+                     ORDER BY ou.is_default DESC, o.name ASC",
+                    [$user['id']]
+                );
+                $orgs = $stmtOrgs->fetchAll(PDO::FETCH_ASSOC);
+                if (empty($orgs)) {
+                    $stmtAll = Model::query("SELECT *, 'owner' as role, 1 as is_default FROM organizations WHERE is_active = 1 ORDER BY id ASC");
+                    $orgs = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+                }
+
+                return $this->json([
+                    'user' => $user,
+                    'organizations' => $orgs
+                ]);
             }
         } catch (Exception $e) {}
 
         return $this->error('Sessão expirada ou inválida.', 401);
+    }
+
+    public function post_switch_org()
+    {
+        $body = $this->request->getJson();
+        $orgId = (int) ($body['organization_id'] ?? 0);
+
+        if (!$orgId) {
+            return $this->error('ID da organização é obrigatório.', 422);
+        }
+
+        $stmt = Model::query("SELECT * FROM organizations WHERE id = ? AND is_active = 1", [$orgId]);
+        $org = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$org) {
+            return $this->error('Organização não encontrada.', 404);
+        }
+
+        return $this->json([
+            'message' => 'Organização alternada com sucesso.',
+            'active_organization' => $org
+        ]);
     }
 }

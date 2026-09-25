@@ -398,16 +398,65 @@ class KontabsUI {
         return KontabsUI.r.kontabsChartContainer(id, title, chart, actions);
     }
 
-    // Utilitários de Organização
-    static switchOrg(orgName, type) {
+    // Utilitários de Organização Multi-Organização (PF e PJ)
+    static async initOrganizations() {
+        try {
+            const res = await ApiService.get('organizations');
+            const orgs = res.data || [];
+            if (!orgs.length) return;
+
+            let activeId = ApiService.getActiveOrgId();
+            let activeOrg = orgs.find(o => parseInt(o.id) === activeId) || orgs[0];
+            ApiService.setActiveOrgId(activeOrg.id, activeOrg.name);
+
+            jQuery('#active-org-name').text(activeOrg.name);
+            jQuery('.kore-sidebar-user .text-truncate:last-child').text(activeOrg.name);
+
+            let menuHtml = '<li><h6 class="dropdown-header text-uppercase fs-xs fw-bold">Suas Organizações</h6></li>';
+            orgs.forEach(org => {
+                const isActive = (parseInt(org.id) === parseInt(activeOrg.id)) ? 'active' : '';
+                const icon = org.type === 'PJ' ? 'bi-briefcase' : 'bi-person';
+                const badge = org.type === 'PJ' ? 'PJ' : 'PF';
+                menuHtml += `
+                    <li>
+                        <a class="dropdown-item ${isActive} d-flex align-items-center justify-content-between py-2" href="javascript:;" onclick="KontabsUI.switchOrg(${org.id}, '${org.name}')">
+                            <span><i class="bi ${icon} me-2 text-primary"></i>${org.name}</span>
+                            <span class="badge bg-light text-dark">${badge}</span>
+                        </a>
+                    </li>
+                `;
+            });
+            menuHtml += '<li><hr class="dropdown-divider"></li>';
+            menuHtml += '<li><a class="dropdown-item text-primary py-2" href="javascript:;" onclick="KontabsUI.openNewOrgModal()"><i class="bi bi-plus-circle me-2"></i>Nova Organização...</a></li>';
+
+            jQuery('#org-selector-menu').html(menuHtml);
+        } catch (e) {
+            console.warn('[KontabsUI] Falha ao carregar organizações:', e);
+        }
+    }
+
+    static async switchOrg(orgId, orgName) {
+        ApiService.setActiveOrgId(orgId, orgName);
         jQuery('#active-org-name').text(orgName);
+        jQuery('.kore-sidebar-user .text-truncate:last-child').text(orgName);
+        await KontabsUI.initOrganizations();
         if (typeof router !== 'undefined') {
             router.executeRoute();
         }
     }
 
     static openNewOrgModal() {
-        alert('Funcionalidade de Multi-Organização: criação de nova organização (Fase 3).');
+        const name = prompt('Informe o nome da nova organização (PF ou PJ):');
+        if (!name) return;
+        const isPj = confirm('Esta nova organização é Pessoa Jurídica (PJ)? Clique OK para PJ ou Cancelar para PF (Pessoa Física).');
+        const type = isPj ? 'PJ' : 'PF';
+
+        ApiService.post('organizations', { name, type })
+            .then(res => {
+                alert('Organização cadastrada com sucesso!');
+                KontabsUI.switchOrg(res.id, name);
+            })
+            .catch(err => alert(err.message || 'Erro ao cadastrar organização.'));
     }
 
     static openNovaMovimentacaoModal() {

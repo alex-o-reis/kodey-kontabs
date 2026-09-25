@@ -84,6 +84,11 @@ $version = 'v=' . KORE_VERSION;
                 // Inicializa o roteador do Kore e monta o menu
                 router.init(KoreConfig.ROUTES, KoreConfig.MENU);
                 jQuery('.kore-menu-container').html(router.createMenu(KoreConfig.MENU));
+                
+                // Carrega organizações reais do usuário na topbar
+                if (typeof KontabsUI !== 'undefined' && KontabsUI.initOrganizations) {
+                    KontabsUI.initOrganizations();
+                }
             });
         });
     </script>
