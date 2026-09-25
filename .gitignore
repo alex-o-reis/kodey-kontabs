@@ -1,0 +1,36 @@
+# Environment files
+.env
+kore-api/.env
+kore-front/.env
+
+# Databases & Local state
+*.sqlite
+*.sqlite3
+*.db
+kore-api/app/database/*.sqlite
+
+# Dependencies
+vendor/
+node_modules/
+
+# Logs & Cache
+*.log
+.system_generated/
+temp/
+tmp/
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar

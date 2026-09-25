@@ -1,0 +1,759 @@
+/* ==========================================================
+   KODEY KONTABS — DESIGN SYSTEM & TOKENS OFICIAIS
+   Powered by Kore Framework (KKF)
+   ========================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap');
+
+:root {
+    /* Paleta Oficial Kontabs */
+    --kk-green-700: #0E5A4F;
+    --kk-green-600: #0F7A4A;
+    --kk-green-500: #22C55E;
+    --kk-green-300: #8CE99A;
+    --kk-mint-100:  #D1F2E0;
+    --kk-cream:     #FFF9EE;
+    --kk-yellow:    #FACC15;
+    --kk-coral:     #FF7A6B;
+    --kk-blue:      #68A9FF;
+    --kk-ink:       #14352F;
+    --kk-muted:     #667A74;
+    --kk-line:      #DDE9E4;
+    --kk-white:     #FFFFFF;
+    --kk-danger:    #D9534F;
+
+    /* Raios de Borda */
+    --kk-radius-sm: 10px;
+    --kk-radius-md: 16px;
+    --kk-radius-lg: 24px;
+    --kk-radius-xl: 32px;
+
+    /* Sombras Acolhedoras */
+    --kk-shadow-sm: 0 4px 16px rgba(14, 90, 79, 0.07);
+    --kk-shadow-md: 0 12px 34px rgba(14, 90, 79, 0.11);
+    --kk-shadow-lg: 0 20px 48px rgba(14, 90, 79, 0.16);
+
+    /* Espaçamentos */
+    --kk-space-1: 4px;
+    --kk-space-2: 8px;
+    --kk-space-3: 12px;
+    --kk-space-4: 16px;
+    --kk-space-5: 24px;
+    --kk-space-6: 32px;
+    --kk-space-7: 48px;
+    --kk-space-8: 64px;
+
+    /* Tipografia */
+    --kk-font-display: "Nunito", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --kk-font-body: "Inter", "Segoe UI", Roboto, Arial, sans-serif;
+
+    /* Dimensões Layout */
+    --kore-sidebar-width: 270px;
+    --kore-topbar-height: 68px;
+}
+
+/* ==========================================================
+   RESET & BASE GLOBAL
+   ========================================================== */
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background-color: var(--kk-cream) !important;
+    color: var(--kk-ink) !important;
+    font-family: var(--kk-font-body) !important;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .font-display {
+    font-family: var(--kk-font-display);
+    color: var(--kk-ink);
+    letter-spacing: -0.015em;
+}
+
+a {
+    color: var(--kk-green-600);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+a:hover {
+    color: var(--kk-green-700);
+}
+
+/* ==========================================================
+   LAYOUT PRINCIPAL (KORE WRAPPER)
+   ========================================================== */
+.kore-wrapper {
+    display: flex;
+    min-height: 100vh;
+    background-color: var(--kk-cream);
+}
+
+/* ==========================================================
+   SIDEBAR KODEY KONTABS
+   ========================================================== */
+.kore-sidebar {
+    width: var(--kore-sidebar-width);
+    background-color: #103C35;
+    color: #EFFFF7;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
+    box-shadow: 4px 0 24px rgba(10, 45, 39, 0.15);
+    overflow: hidden;
+}
+
+.kore-sidebar-brand {
+    height: var(--kore-topbar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kore-sidebar-brand img.brand-logo {
+    max-height: 38px;
+    width: auto;
+    object-fit: contain;
+}
+
+.kore-sidebar-brand img.brand-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+}
+
+.kore-sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem 0.85rem;
+}
+
+.kore-sidebar-nav::-webkit-scrollbar {
+    width: 5px;
+}
+.kore-sidebar-nav::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+
+.kore-sidebar .nav-section-title {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #88B7A8;
+    padding: 0.85rem 1rem 0.35rem;
+    font-weight: 800;
+}
+
+.kore-sidebar .nav-link {
+    color: #DDF7EA;
+    padding: 0.75rem 1rem;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    transition: all 0.2s ease;
+}
+
+.kore-sidebar .nav-link i {
+    font-size: 1.15rem;
+    opacity: 0.85;
+}
+
+.kore-sidebar .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.09);
+    color: #FFFFFF;
+    transform: translateX(3px);
+}
+
+.kore-sidebar .nav-link.active {
+    background-color: var(--kk-green-500);
+    color: #083A2D !important;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.3);
+}
+
+.kore-sidebar .nav-link.active i {
+    opacity: 1;
+}
+
+.kore-sidebar-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: rgba(0, 0, 0, 0.12);
+}
+
+.kore-sidebar-user {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.kore-sidebar-user .user-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: var(--kk-mint-100);
+    color: var(--kk-green-700);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+}
+
+/* ==========================================================
+   MAIN WRAPPER & TOPBAR
+   ========================================================== */
+.kore-main-wrapper {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.kore-topbar {
+    height: var(--kore-topbar-height);
+    background-color: #FFFFFF;
+    border-bottom: 1px solid var(--kk-line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 1010;
+    box-shadow: var(--kk-shadow-sm);
+}
+
+.page-title {
+    font-family: var(--kk-font-display);
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: var(--kk-ink);
+    margin: 0;
+}
+
+.org-selector {
+    background: #F4FAF7;
+    border: 1px solid #CFE2DA;
+    border-radius: 12px;
+    padding: 6px 14px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--kk-green-700);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.org-selector:hover {
+    background: #E8F7F0;
+    border-color: var(--kk-green-500);
+}
+
+.kore-content-container {
+    padding: 2.25rem 2.5rem;
+    flex-grow: 1;
+    max-width: 1600px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* ==========================================================
+   FOOTER (CRÉDITOS OFICIAIS DISCRETOS)
+   ========================================================== */
+.kore-footer {
+    background-color: #FFFFFF;
+    border-top: 1px solid var(--kk-line);
+    padding: 1.1rem 2.5rem;
+    font-size: 0.85rem;
+    color: var(--kk-muted);
+}
+
+.kore-footer strong {
+    color: var(--kk-ink);
+}
+
+.kore-footer .tech-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #F2F8F5;
+    border-radius: 8px;
+    font-weight: 600;
+    color: var(--kk-green-700);
+}
+
+/* ==========================================================
+   COMPONENTES VISUAIS KODEY KONTABS
+   ========================================================== */
+
+/* Cartões (Kontabs Card) */
+.kontabs-card, .card {
+    background: #FFFFFF;
+    border: 1px solid var(--kk-line);
+    border-radius: var(--kk-radius-lg);
+    box-shadow: var(--kk-shadow-sm);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    overflow: hidden;
+}
+
+.kontabs-card-body, .card-body {
+    padding: 1.65rem;
+}
+
+.kontabs-card-header, .card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--kk-line);
+    padding: 1.25rem 1.65rem;
+    font-family: var(--kk-font-display);
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--kk-ink);
+}
+
+.kontabs-card-footer, .card-footer {
+    background: #FCFDFD;
+    border-top: 1px solid var(--kk-line);
+    padding: 1rem 1.65rem;
+}
+
+.shadow-hover:hover {
+    box-shadow: var(--kk-shadow-md) !important;
+    transform: translateY(-2px);
+}
+
+/* Botões Oficiais */
+.btn-kontabs, .btn {
+    border-radius: 14px;
+    padding: 11px 20px;
+    font-weight: 800;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 0;
+    cursor: pointer;
+}
+
+.btn-kontabs-primary, .btn-primary {
+    background: var(--kk-green-500) !important;
+    color: #083A2D !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(34, 197, 94, 0.25);
+}
+
+.btn-kontabs-primary:hover, .btn-primary:hover {
+    background: #1eb354 !important;
+    color: #05261d !important;
+    box-shadow: 0 6px 18px rgba(34, 197, 94, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-kontabs-dark, .btn-dark {
+    background: var(--kk-green-700) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(14, 90, 79, 0.25);
+}
+
+.btn-kontabs-dark:hover, .btn-dark:hover {
+    background: #094038 !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+}
+
+.btn-kontabs-secondary, .btn-secondary {
+    background: #EAF8F0 !important;
+    color: var(--kk-green-700) !important;
+    border: 1px solid #BFE8CF !important;
+}
+
+.btn-kontabs-secondary:hover, .btn-secondary:hover {
+    background: #D9F3E3 !important;
+    color: var(--kk-green-700) !important;
+}
+
+.btn-kontabs-warning, .btn-warning {
+    background: var(--kk-yellow) !important;
+    color: #4D3C00 !important;
+}
+
+.btn-kontabs-danger, .btn-danger {
+    background: var(--kk-coral) !important;
+    color: #5B1D17 !important;
+}
+
+.btn-kontabs-outline {
+    background: transparent !important;
+    color: var(--kk-ink) !important;
+    border: 1px solid var(--kk-line) !important;
+}
+
+.btn-kontabs-outline:hover {
+    background: #F4FAF7 !important;
+    border-color: #BFE8CF !important;
+}
+
+/* Campos de Formulário */
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--kk-ink);
+    margin-bottom: 0.45rem;
+}
+
+.form-control, .form-select {
+    border: 1px solid #CFE2DA;
+    border-radius: 14px;
+    background: #FFFFFF;
+    padding: 12px 16px;
+    font-family: var(--kk-font-body);
+    font-size: 0.95rem;
+    color: var(--kk-ink);
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--kk-green-500);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
+    outline: none;
+}
+
+/* Money Input com Prefixo R$ */
+.kontabs-money-group .input-group-text {
+    background-color: #F3F9F6;
+    border: 1px solid #CFE2DA;
+    border-right: none;
+    border-radius: 14px 0 0 14px;
+    font-weight: 800;
+    color: var(--kk-green-700);
+    padding: 0 16px;
+}
+
+.kontabs-money-group .form-control {
+    border-radius: 0 14px 14px 0;
+    font-family: var(--kk-font-display);
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+
+/* Cartões KPI */
+.kontabs-kpi {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+.kontabs-kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.85rem;
+}
+
+.kontabs-kpi-title {
+    font-size: 0.88rem;
+    color: var(--kk-muted);
+    font-weight: 600;
+    margin: 0;
+}
+
+.kontabs-kpi-value {
+    font-family: var(--kk-font-display);
+    font-size: 2.15rem;
+    font-weight: 800;
+    color: var(--kk-ink);
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+}
+
+.kontabs-kpi-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: var(--kk-muted);
+}
+
+/* Pills & Badges */
+.pill, .badge-kontabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.pill-success, .badge-previsto {
+    background: #E8F8EF;
+    color: var(--kk-green-700);
+}
+
+.pill-efetivado {
+    background: #D1F2E0;
+    color: #0B5C35;
+}
+
+.pill-warning {
+    background: #FFF7D1;
+    color: #634E00;
+}
+
+.pill-danger {
+    background: #FFE5E1;
+    color: #8C241B;
+}
+
+.pill-info {
+    background: #E3F2FD;
+    color: #0D47A1;
+}
+
+/* Alertas Especiais Kontabs (Dinheiro sem destino / sem origem) */
+.kontabs-alert {
+    display: flex;
+    gap: 18px;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--kk-radius-md);
+    margin: 1rem 0;
+    align-items: center;
+}
+
+.kontabs-alert.success {
+    background: #EAF9EF;
+    border: 1px solid #C4EDD3;
+}
+
+.kontabs-alert.warning {
+    background: #FFF9DD;
+    border: 1px solid #FFEAA0;
+}
+
+.kontabs-alert.danger {
+    background: #FFF0ED;
+    border: 1px solid #FFCDC5;
+}
+
+.kontabs-alert .alert-icon {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.kontabs-alert .alert-content {
+    flex: 1;
+}
+
+.kontabs-alert .alert-title {
+    font-family: var(--kk-font-display);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 2px;
+    color: var(--kk-ink);
+}
+
+.kontabs-alert .alert-desc {
+    font-size: 0.92rem;
+    color: #3C5B53;
+    margin: 0;
+}
+
+/* Barra de Progresso Kontabs */
+.kontabs-progress {
+    height: 14px;
+    background: #E6F0EC;
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+.kontabs-progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--kk-green-600), var(--kk-green-500));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.kontabs-progress-bar.warning {
+    background: linear-gradient(90deg, #EAB308, var(--kk-yellow));
+}
+
+.kontabs-progress-bar.danger {
+    background: linear-gradient(90deg, #DC2626, var(--kk-coral));
+}
+
+/* Empty State Kontabs */
+.kontabs-empty-state {
+    text-align: center;
+    padding: 3.5rem 2rem;
+    max-width: 580px;
+    margin: 0 auto;
+}
+
+.kontabs-empty-state img {
+    max-width: 170px;
+    height: auto;
+    margin-bottom: 1.5rem;
+}
+
+.kontabs-empty-state h3 {
+    font-family: var(--kk-font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+}
+
+.kontabs-empty-state p {
+    color: var(--kk-muted);
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Tabelas Kontabs */
+.kontabs-table-container {
+    background: #FFFFFF;
+    border: 1px solid var(--kk-line);
+    border-radius: var(--kk-radius-lg);
+    box-shadow: var(--kk-shadow-sm);
+    overflow-x: auto;
+}
+
+.kontabs-table {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: collapse;
+    min-width: 760px;
+}
+
+.kontabs-table th {
+    background: #F8FCFA;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+    color: var(--kk-muted);
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--kk-line);
+    white-space: nowrap;
+}
+
+.kontabs-table td {
+    padding: 0.95rem 1rem;
+    font-size: 0.92rem;
+    color: var(--kk-ink);
+    border-bottom: 1px solid #F1F6F4;
+    vertical-align: middle;
+}
+
+.kontabs-table tbody tr:hover {
+    background-color: #F9FEFB;
+}
+
+.kontabs-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Modais Kontabs */
+.modal-content {
+    border-radius: var(--kk-radius-lg);
+    border: 1px solid var(--kk-line);
+    box-shadow: var(--kk-shadow-lg);
+    overflow: hidden;
+}
+
+.modal-header {
+    background-color: #FBFDFB;
+    border-bottom: 1px solid var(--kk-line);
+    padding: 1.4rem 1.8rem;
+}
+
+.modal-title {
+    font-family: var(--kk-font-display);
+    font-weight: 800;
+    font-size: 1.3rem;
+}
+
+.modal-body {
+    padding: 1.8rem;
+}
+
+.modal-footer {
+    background-color: #FBFDFB;
+    border-top: 1px solid var(--kk-line);
+    padding: 1.2rem 1.8rem;
+}
+
+/* ==========================================================
+   RESPONSIVIDADE (MOBILE & TABLET)
+   ========================================================== */
+@media (max-width: 992px) {
+    .sidebar-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(14, 50, 43, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 1015;
+    }
+
+    .kore-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        transform: translateX(-100%);
+    }
+
+    .kore-sidebar.open {
+        transform: translateX(0);
+    }
+
+    .kore-content-container {
+        padding: 1.5rem 1rem;
+    }
+
+    .kore-topbar {
+        padding: 0 1rem;
+    }
+
+    .kontabs-kpi-value {
+        font-size: 1.75rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .page-title {
+        font-size: 1.15rem;
+    }
+
+    .kontabs-alert {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

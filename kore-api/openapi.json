@@ -1,0 +1,178 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Kore Framework REST API",
+        "description": "Documentacao interativa OpenAPI gerada automaticamente por Reflection a partir dos Controllers do Kore Framework.",
+        "version": "1.0.0",
+        "contact": {
+            "name": "Alex Reis & Kodey Sistemas",
+            "url": "https://kodey.com.br"
+        }
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "Servidor Local"
+        }
+    ],
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Executa acao post_login em Auth",
+                "responses": {
+                    "200": {
+                        "description": "Operacao realizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Requisicao invalida"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Executa acao get_me em Auth",
+                "responses": {
+                    "200": {
+                        "description": "Operacao realizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Requisicao invalida"
+                    }
+                }
+            }
+        },
+        "/docs/{id}": {
+            "get": {
+                "tags": [
+                    "Docs"
+                ],
+                "summary": "Executa acao get em Docs",
+                "responses": {
+                    "200": {
+                        "description": "Operacao realizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Requisicao invalida"
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identificador do recurso",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/index/{id}": {
+            "get": {
+                "tags": [
+                    "Index"
+                ],
+                "summary": "Executa acao get em Index",
+                "responses": {
+                    "200": {
+                        "description": "Operacao realizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Requisicao invalida"
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identificador do recurso",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/products/{id}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Executa acao get em Products",
+                "responses": {
+                    "200": {
+                        "description": "Operacao realizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Requisicao invalida"
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "description": "Identificador do recurso",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/products": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Executa acao post em Products",
+                "responses": {
+                    "200": {
+                        "description": "Operacao realizada com sucesso"
+                    },
+                    "400": {
+                        "description": "Requisicao invalida"
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "Token"
+            }
+        }
+    }
+}

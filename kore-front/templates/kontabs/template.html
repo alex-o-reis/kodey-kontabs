@@ -1,0 +1,171 @@
+<div class="kore-wrapper">
+    <!-- Overlay Backdrop para Mobile -->
+    <div class="sidebar-backdrop d-none" id="kore-sidebar-backdrop"></div>
+
+    <!-- Sidebar Oficial Kontabs -->
+    <aside class="kore-sidebar" id="kore-sidebar">
+        <!-- Brand Header com Logo Oficial -->
+        <div class="kore-sidebar-brand justify-content-between">
+            <a href="#/" class="d-flex align-items-center gap-2 text-decoration-none">
+                <img src="app/assets/logos/logo-horizontal.png" alt="Kodey Kontabs" class="brand-logo d-none d-sm-block" style="max-height: 38px;">
+                <img src="app/assets/logos/app-icon.png" alt="Kodey Kontabs" class="brand-icon d-sm-none" style="width: 36px; height: 36px; border-radius: 10px;">
+            </a>
+            <button class="btn btn-sm btn-link text-white d-lg-none p-0" id="kore-close-sidebar">
+                <i class="bi bi-x-lg fs-5"></i>
+            </button>
+        </div>
+
+        <!-- Navegação Principal Injetada pelo Router do Kore -->
+        <div class="kore-sidebar-nav">
+            <ul class="nav flex-column kore-menu-container">
+                <!-- Links inseridos dinamicamente por router.createMenu() -->
+            </ul>
+        </div>
+
+        <!-- Rodapé da Sidebar: Usuário & Organização -->
+        <div class="kore-sidebar-footer">
+            <div class="kore-sidebar-user">
+                <div class="user-avatar">AR</div>
+                <div class="flex-grow-1 text-truncate" style="min-width: 0;">
+                    <div class="fw-bold text-white fs-6 text-truncate">Alex Reis</div>
+                    <div class="text-truncate" style="font-size: 0.78rem; color: #B9D8CE;">Kodey Sistemas</div>
+                </div>
+                <a href="#/configuracoes" class="text-white opacity-75 hover-opacity-100 p-1" title="Configurações">
+                    <i class="bi bi-gear-fill"></i>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Wrapper -->
+    <div class="kore-main-wrapper">
+        <!-- Topbar Acolhedora Kontabs -->
+        <header class="kore-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-sm btn-kontabs-outline d-lg-none" id="kore-toggle-sidebar" aria-label="Abrir menu">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                <div>
+                    <h2 class="page-title mb-0">Dashboard</h2>
+                </div>
+            </div>
+
+            <!-- Controles do Topbar: Seletor de Organização, Ação Rápida e Perfil -->
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <!-- Seletor Multi-Organização -->
+                <div class="dropdown d-none d-sm-block">
+                    <button class="org-selector dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-buildings me-1"></i>
+                        <span id="active-org-name">Kodey Sistemas</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-1" style="min-width: 220px;">
+                        <li><h6 class="dropdown-header text-uppercase fs-xs fw-bold">Suas Organizações</h6></li>
+                        <li><a class="dropdown-item active d-flex align-items-center justify-content-between py-2" href="javascript:;" onclick="KontabsUI.switchOrg('Kodey Sistemas', 'EMPRESARIAL')">
+                            <span><i class="bi bi-briefcase me-2 text-primary"></i>Kodey Sistemas</span>
+                            <span class="badge bg-light text-dark">PJ</span>
+                        </a></li>
+                        <li><a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="javascript:;" onclick="KontabsUI.switchOrg('Minhas Finanças', 'PESSOAL')">
+                            <span><i class="bi bi-person me-2 text-success"></i>Minhas Finanças</span>
+                            <span class="badge bg-light text-dark">PF</span>
+                        </a></li>
+                        <li><a class="dropdown-item d-flex align-items-center justify-content-between py-2" href="javascript:;" onclick="KontabsUI.switchOrg('Família Reis', 'FAMILIAR')">
+                            <span><i class="bi bi-people me-2 text-warning"></i>Família Reis</span>
+                            <span class="badge bg-light text-dark">Família</span>
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-primary py-2" href="javascript:;" onclick="KontabsUI.openNewOrgModal()">
+                            <i class="bi bi-plus-circle me-2"></i>Nova Organização...
+                        </a></li>
+                    </ul>
+                </div>
+
+                <!-- Botão de Ação Rápida -->
+                <button class="btn btn-kontabs-primary d-none d-md-inline-flex" id="btn-topbar-nova-movimentacao" onclick="KontabsUI.openNovaMovimentacaoModal()">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Nova Movimentação</span>
+                </button>
+
+                <!-- Notificações com Pulse -->
+                <div class="dropdown">
+                    <button class="btn btn-kontabs-outline position-relative px-3 py-2" data-bs-toggle="dropdown" aria-label="Notificações">
+                        <i class="bi bi-bell"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                            <span class="visually-hidden">Alertas pendentes</span>
+                        </span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-3 mt-2" style="width: 340px;">
+                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                            <strong class="fs-6">Lembretes & Alertas</strong>
+                            <span class="badge bg-success-subtle text-success">2 novos</span>
+                        </div>
+                        <div class="d-flex gap-2 p-2 rounded-3 bg-light mb-2">
+                            <img src="app/assets/alerts/alert-bill-due.png" alt="Conta" style="width: 32px; height: 32px; object-fit: contain;">
+                            <div class="small">
+                                <strong>Energia Elétrica</strong> vence amanhã (R$ 347,82).
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 p-2 rounded-3 bg-warning-subtle">
+                            <img src="app/assets/alerts/alert-budget-piggy.png" alt="Orçamento" style="width: 32px; height: 32px; object-fit: contain;">
+                            <div class="small">
+                                <strong>R$ 1.230</strong> ainda estão sem destino este mês.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Perfil do Usuário -->
+                <div class="dropdown">
+                    <button class="btn btn-kontabs-outline d-flex align-items-center gap-2 p-1 pe-2" data-bs-toggle="dropdown">
+                        <div class="user-avatar" style="width: 34px; height: 34px; border-radius: 10px; background: var(--kk-mint-100); color: var(--kk-green-700); font-weight: 800; display: grid; place-items: center;">AR</div>
+                        <i class="bi bi-chevron-down fs-xs text-muted"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-1">
+                        <li><a class="dropdown-item py-2" href="#/perfil"><i class="bi bi-person me-2"></i>Meu Perfil</a></li>
+                        <li><a class="dropdown-item py-2" href="#/showcase"><i class="bi bi-palette2 me-2"></i>UI Showcase (Tokens)</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger py-2" href="#/login"><i class="bi bi-box-arrow-right me-2"></i>Encerrar Sessão</a></li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <!-- Área de Conteúdo Dinâmico (Views renderizam aqui via UI Relay) -->
+        <main class="kore-content-container">
+            <div class="conteudo-interno">
+                <!-- Conteúdo das Views do Kontabs -->
+            </div>
+        </main>
+
+        <!-- Rodapé Oficial com Assinatura Técnica Discreta -->
+        <footer class="kore-footer d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+            <div>
+                <strong>Kodey Kontabs</strong> &copy; 2026. Um produto da <a href="https://kodey.com.br" target="_blank" class="fw-semibold">Kodey Sistemas</a>.
+            </div>
+            <div class="tech-badge">
+                <i class="bi bi-cpu-fill"></i>
+                <span>Powered by Kore Framework</span>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<script>
+    // Controle da Sidebar Mobile
+    jQuery(document).on('click', '#kore-toggle-sidebar', function() {
+        jQuery('#kore-sidebar').addClass('open');
+        jQuery('#kore-sidebar-backdrop').removeClass('d-none');
+    });
+
+    jQuery(document).on('click', '#kore-close-sidebar, #kore-sidebar-backdrop', function() {
+        jQuery('#kore-sidebar').removeClass('open');
+        jQuery('#kore-sidebar-backdrop').addClass('d-none');
+    });
+
+    // Fechar menu mobile ao clicar em um link
+    jQuery(document).on('click', '.kore-sidebar .nav-link', function() {
+        if (window.innerWidth <= 992) {
+            jQuery('#kore-sidebar').removeClass('open');
+            jQuery('#kore-sidebar-backdrop').addClass('d-none');
+        }
+    });
+</script>

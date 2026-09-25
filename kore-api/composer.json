@@ -1,0 +1,36 @@
+﻿{
+    name: kodey/kore-framework,
+    description: Kore Framework - Modular, decoupled full-stack framework with PHP REST API and SPA MVC with UI Relay and Bootstrap 5,
+    type: project,
+    license: MIT,
+    authors: [
+        {
+            name: Alex Reis,
+            email: contato@kodey.com.br,
+            homepage: https://kodey.com.br,
+            role: Creator and Lead Developer
+        },
+        {
+            name: Kodey Sistemas,
+            homepage: https://kodey.com.br,
+            role: Maintainer
+        }
+    ],
+    require: {
+        php: >=8.1,
+        ext-pdo: *,
+        ext-pdo_mysql: *,
+        ext-json: *
+    },
+    require-dev: {
+        phpunit/phpunit: ^10.0
+    },
+    autoload: {
+        psr-4: {
+            Kore\: kore/,
+            App\: app/
+        }
+    },
+    minimum-stability: stable,
+    prefer-stable: true
+}
