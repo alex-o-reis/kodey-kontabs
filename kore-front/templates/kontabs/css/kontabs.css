@@ -120,12 +120,14 @@ a:hover {
     height: var(--kore-topbar-height);
     display: flex;
     align-items: center;
-    padding: 0 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 1.25rem;
+    background-color: #FFFFFF;
+    border-bottom: 1px solid var(--kk-line);
+    border-right: 1px solid var(--kk-line);
 }
 
 .kore-sidebar-brand img.brand-logo {
-    max-height: 38px;
+    max-height: 40px;
     width: auto;
     object-fit: contain;
 }

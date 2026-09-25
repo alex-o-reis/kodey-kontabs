@@ -1,6 +1,6 @@
 /**
  * CheckupView — Experiência Semanal de Revisão em Poucos Minutos
- * Não é uma tela densa ou pesada. Foco exclusivo nos pontos prioritários.
+ * Layout compacto: cabe integralmente na tela do computador sem rolagem.
  */
 class CheckupView extends View {
     constructor() {
@@ -11,72 +11,117 @@ class CheckupView extends View {
     render() {
         jQuery('.page-title').text('Check-up Financeiro');
 
+        // Banner compacto no topo (imagem alinhada na horizontal, título e botão de conclusão)
         let checkupHeader = `
-            <div class="text-center py-4 mb-3" style="max-width: 680px; margin: 0 auto;">
-                <img src="app/assets/illustrations/mascot-workspace.png" alt="Check-up" style="max-height: 140px; object-fit: contain;">
-                <h2 class="mt-3 font-display">Seu Check-up Financeiro Semanal</h2>
-                <p class="text-muted">Apenas 3 minutos para revisar o essencial, planejar sua semana e manter suas finanças no controle sem dor de cabeça.</p>
+            <div class="kontabs-card p-3 mb-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 bg-white">
+                <div class="d-flex align-items-center gap-3">
+                    <img src="app/assets/illustrations/mascot-workspace.png" alt="Check-up" style="height: 52px; width: 52px; object-fit: contain;">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h5 class="mb-0 font-display fw-bold">Check-up Semanal</h5>
+                            <span class="badge bg-primary-subtle text-primary"><i class="bi bi-stopwatch"></i> 3 min</span>
+                        </div>
+                        <p class="text-muted small mb-0">Revise os 4 pontos prioritários da sua semana para manter suas contas no azul.</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-kontabs-primary text-nowrap shadow-sm" onclick="alert('🎉 Check-up semanal concluído! Você está no controle das suas finanças.')">
+                        <i class="bi bi-check2-circle me-1"></i> Concluir Check-up
+                    </button>
+                </div>
             </div>
         `;
 
-        // Itens que Realmente Precisam de Atenção
+        // Grade 2x2 compacta com os 4 itens essenciais
         let itemsHtml = `
-            <div style="max-width: 760px; margin: 0 auto;" class="d-flex flex-column gap-3">
+            <div class="row g-3">
                 <!-- Item 1: Dinheiro Sem Destino -->
-                <div class="kontabs-card shadow-hover p-4 d-flex flex-column flex-sm-row gap-3 align-items-sm-center border-warning">
-                    <img src="app/assets/alerts/alert-budget-piggy.png" style="width: 48px; height: 48px; object-fit: contain;">
-                    <div class="flex-grow-1">
-                        <span class="badge bg-warning text-dark mb-1">Ação Recomendada</span>
-                        <h5 class="mb-1 fw-bold">R$ 1.230,00 ainda estão sem destino este mês</h5>
-                        <p class="text-muted small mb-0">Direcione este saldo para reservas, investimentos ou amortização de dívidas.</p>
+                <div class="col-12 col-lg-6">
+                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-warning">
+                        <div class="d-flex align-items-start gap-3">
+                            <img src="app/assets/alerts/alert-budget-piggy.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Alerta">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="badge bg-warning text-dark fs-xs">Ação Recomendada</span>
+                                    <span class="text-muted fs-xs">Planejamento</span>
+                                </div>
+                                <h6 class="mb-1 fw-bold text-dark">R$ 1.230,00 sem destino este mês</h6>
+                                <p class="text-muted small mb-0">Direcione este saldo para reservas, investimentos ou quitação de dívidas.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
+                            <button class="btn btn-sm btn-kontabs-primary text-nowrap px-3" onclick="alert('Destinar saldo para Reserva de Emergência')">
+                                <i class="bi bi-arrow-right-circle me-1"></i> Dar Destino
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn btn-kontabs-primary text-nowrap" onclick="alert('Destinar saldo para Reserva de Emergência')">
-                        Dar Destino
-                    </button>
                 </div>
 
                 <!-- Item 2: Conta Vencendo -->
-                <div class="kontabs-card shadow-hover p-4 d-flex flex-column flex-sm-row gap-3 align-items-sm-center">
-                    <img src="app/assets/alerts/alert-bill-due.png" style="width: 48px; height: 48px; object-fit: contain;">
-                    <div class="flex-grow-1">
-                        <span class="badge bg-danger-subtle text-danger mb-1">Vencimento Próximo</span>
-                        <h5 class="mb-1 fw-bold">Conta de Energia vence amanhã</h5>
-                        <p class="text-muted small mb-0">Valor previsto: <strong>R$ 350,00</strong> (CEMIG Distribuição).</p>
+                <div class="col-12 col-lg-6">
+                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-danger">
+                        <div class="d-flex align-items-start gap-3">
+                            <img src="app/assets/alerts/alert-bill-due.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Vencimento">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="badge bg-danger-subtle text-danger fs-xs">Vencimento Próximo</span>
+                                    <span class="text-danger small fw-bold"><i class="bi bi-clock-history"></i> Vence amanhã</span>
+                                </div>
+                                <h6 class="mb-1 fw-bold text-dark">Conta de Energia — CEMIG</h6>
+                                <p class="text-muted small mb-0">Valor previsto: <strong>R$ 350,00</strong>. Evite juros confirmando o pagamento.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
+                            <button class="btn btn-sm btn-kontabs-secondary text-nowrap px-3" onclick="alert('Marcada como paga!')">
+                                <i class="bi bi-check2 me-1"></i> Confirmar Pagamento
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn btn-kontabs-secondary text-nowrap" onclick="alert('Marcada como paga!')">
-                        Confirmar Pagamento
-                    </button>
                 </div>
 
                 <!-- Item 3: Categoria Acima do Previsto -->
-                <div class="kontabs-card shadow-hover p-4 d-flex flex-column flex-sm-row gap-3 align-items-sm-center">
-                    <img src="app/assets/alerts/alert-chart-down.png" style="width: 48px; height: 48px; object-fit: contain;">
-                    <div class="flex-grow-1">
-                        <span class="badge bg-warning-subtle text-warning mb-1">Orçamento</span>
-                        <h5 class="mb-1 fw-bold">Alimentação está 12% acima da meta quinzenal</h5>
-                        <p class="text-muted small mb-0">Você gastou R$ 2.030 de R$ 1.800 previstos. Faltam 5 dias para o fechamento.</p>
+                <div class="col-12 col-lg-6">
+                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-warning">
+                        <div class="d-flex align-items-start gap-3">
+                            <img src="app/assets/alerts/alert-chart-down.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Atenção">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="badge bg-warning-subtle text-warning fs-xs">Atenção ao Teto</span>
+                                    <span class="text-muted fs-xs">Alimentação</span>
+                                </div>
+                                <h6 class="mb-1 fw-bold text-dark">Alimentação está 12% acima da meta</h6>
+                                <p class="text-muted small mb-0">Gasto R$ 2.030 de R$ 1.800 previstos. Faltam 5 dias para o fechamento.</p>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
+                            <button class="btn btn-sm btn-kontabs-outline text-nowrap px-3" onclick="window.location.hash='#/meu-mes'">
+                                <i class="bi bi-sliders me-1"></i> Revisar Gastos
+                            </button>
+                        </div>
                     </div>
-                    <button class="btn btn-kontabs-outline text-nowrap" onclick="window.location.hash='#/meu-mes'">
-                        Revisar Gastos
-                    </button>
                 </div>
 
                 <!-- Item 4: Progresso Positivo da Reserva -->
-                <div class="kontabs-card shadow-hover p-4 d-flex flex-column flex-sm-row gap-3 align-items-sm-center border-success">
-                    <img src="app/assets/illustrations/coin-happy.png" style="width: 48px; height: 48px; object-fit: contain;">
-                    <div class="flex-grow-1">
-                        <span class="badge bg-success-subtle text-success mb-1">Parabéns!</span>
-                        <h5 class="mb-1 fw-bold">Sua Reserva de Emergência recebeu R$ 2.000 este mês</h5>
-                        <p class="text-muted small mb-0">Você alcançou <strong>68% da meta</strong> total (R$ 20.400 / R$ 30.000).</p>
+                <div class="col-12 col-lg-6">
+                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-success">
+                        <div class="d-flex align-items-start gap-3">
+                            <img src="app/assets/illustrations/coin-happy.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Sucesso">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="badge bg-success-subtle text-success fs-xs">Conquista</span>
+                                    <span class="pill pill-efetivado py-0 px-2 fs-xs"><i class="bi bi-check-circle-fill"></i> Em dia</span>
+                                </div>
+                                <h6 class="mb-1 fw-bold text-dark">Reserva de Emergência +R$ 2.000</h6>
+                                <p class="text-muted small mb-0">Você atingiu <strong>68% da meta</strong> total (R$ 20.400 / R$ 30.000 acumulados).</p>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                            <span class="text-muted fs-xs">Ritmo excelente este mês</span>
+                            <button class="btn btn-sm btn-link text-decoration-none p-0 text-kontabs-primary fw-bold" onclick="window.location.hash='#/patrimonio'">
+                                Ver Reserva <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
                     </div>
-                    <span class="pill pill-efetivado text-nowrap"><i class="bi bi-check-circle-fill"></i> Em dia</span>
-                </div>
-
-                <!-- Conclusão do Check-up -->
-                <div class="text-center py-4">
-                    <button class="btn btn-lg btn-kontabs-primary px-5 shadow-hover" onclick="alert('🎉 Check-up semanal concluído! Você está no controle das suas finanças.')">
-                        <i class="bi bi-check-lg me-1"></i> Concluir Check-up Semanal
-                    </button>
                 </div>
             </div>
         `;
