@@ -49,7 +49,7 @@
 
     /* Dimensões Layout */
     --kore-sidebar-width: 270px;
-    --kore-topbar-height: 68px;
+    --kore-topbar-height: 74px;
 }
 
 /* ==========================================================
@@ -127,7 +127,7 @@ a:hover {
 }
 
 .kore-sidebar-brand img.brand-logo {
-    max-height: 48px;
+    max-height: 56px;
     width: auto;
     object-fit: contain;
     transition: transform 0.2s ease;
@@ -138,8 +138,8 @@ a:hover {
 }
 
 .kore-sidebar-brand img.brand-icon {
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
 }
 
