@@ -141,7 +141,7 @@ Explore as principais seções navegáveis já ativas na Fase 1:
 - [x] **Fase 6 — Gestão de Cartões de Crédito, Limites e Fechamento de Faturas**
 - [x] **Fase 7 — Planejamento Mensal, Provisionamentos e Envelopes de Gastos por Categoria**
 - [x] **Fase 8 — Motor de Projeção Financeira e Fluxo de Caixa Futuro (7d, 30d, 90d, 12m)**
-- [ ] **Fase 9 — Inteligência Financeira e Detecção Proativa de Padrões e Anomalias**
+- [x] **Fase 9 — Inteligência Financeira, Detecção Proativa de Padrões e Check-up Semanal**
 
 ---
 

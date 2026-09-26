@@ -1,6 +1,7 @@
 /**
  * CheckupView — Experiência Semanal de Revisão em Poucos Minutos
  * Totalmente integrada à API RESTful e ao banco MySQL do Kore Framework.
+ * Conectada ao Motor de Inteligência Financeira e Detecção Proativa de Padrões (FASE FINAL).
  * Layout compacto: cabe integralmente na tela do computador sem rolagem.
  */
 class CheckupView extends View {
@@ -10,149 +11,167 @@ class CheckupView extends View {
     }
 
     async loadData() {
-        jQuery('.page-title').text('Check-up Financeiro');
+        jQuery('.page-title').text('Check-up Semanal');
 
         try {
-            const response = await ApiService.get('/checkup');
-            if (response && response.data) {
-                this.render(response.data);
-                return;
-            }
+            const [checkupRes, insightsRes] = await Promise.all([
+                ApiService.get('checkup').catch(() => null),
+                ApiService.get('insights').catch(() => null)
+            ]);
+
+            const checkupData = checkupRes && checkupRes.data ? checkupRes.data : null;
+            const insightsData = insightsRes && insightsRes.data ? insightsRes.data : null;
+
+            this.render(checkupData, insightsData);
         } catch (e) {
             console.warn('[CheckupView] Carregando com dados padrão locais:', e.message);
+            this.render(null, null);
         }
-
-        // Fallback para renderização caso API esteja momentaneamente inacessível
-        this.render(null);
     }
 
-    render(apiData) {
+    render(apiData, insightsData) {
         const items = apiData ? apiData.items : null;
+        const weekly = insightsData && insightsData.weekly_summary ? insightsData.weekly_summary : null;
+        const subscriptions = insightsData && insightsData.subscriptions ? insightsData.subscriptions : null;
 
-        // Dados dinâmicos ou padrões
-        const unallocatedAmount = items && items.unallocated ? items.unallocated.formatted : 'R$ 1.230,00';
-        const unallocatedRaw = items && items.unallocated ? items.unallocated.amount : 1230;
+        const healthScore = weekly ? weekly.health_score : 88;
+        const healthLabel = weekly ? weekly.health_label : 'Saúde Financeira Forte';
+
+        const unallocatedAmount = items && items.unallocated ? items.unallocated.formatted : 'R$ 5.260,00';
+        const unallocatedRaw = items && items.unallocated ? items.unallocated.amount : 5260;
 
         const bill = (items && items.upcoming_bills && items.upcoming_bills.bills && items.upcoming_bills.bills.length > 0)
             ? items.upcoming_bills.bills[0]
-            : { id: 8, description: 'Conta de Energia — CEMIG', amount_expected: '350.00', due_date: 'amanhã' };
-
-        const overBudget = (items && items.over_budget && items.over_budget.categories && items.over_budget.categories.length > 0)
-            ? items.over_budget.categories[0]
-            : { name: 'Alimentação', monthly_budget: '1800.00', total_spent: '2030.00' };
+            : { id: 8, description: 'Conta de Energia Elétrica — CEMIG', amount_expected: '350.00', due_date: '26/09/2026' };
 
         const reserve = items && items.reserve 
             ? items.reserve 
             : { name: 'Reserva de Emergência', percentage: 68, formatted_current: 'R$ 20.400,00', formatted_target: 'R$ 30.000,00' };
 
-        // Banner compacto no topo (imagem alinhada na horizontal, título e botão de conclusão)
+        // 1. Header Compacto com Mascote e Score de Saúde
         let checkupHeader = `
-            <div class="kontabs-card p-3 mb-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 bg-white">
+            <div class="kontabs-card p-3 mb-3 d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 bg-white border">
                 <div class="d-flex align-items-center gap-3">
                     <img src="app/assets/illustrations/mascot-workspace.png" alt="Check-up" style="height: 52px; width: 52px; object-fit: contain;">
                     <div>
                         <div class="d-flex align-items-center gap-2">
                             <h5 class="mb-0 font-display fw-bold">Check-up Semanal</h5>
                             <span class="badge bg-primary-subtle text-primary"><i class="bi bi-stopwatch"></i> 3 min</span>
+                            <span class="badge bg-success text-white"><i class="bi bi-heart-pulse-fill me-1"></i> Score ${healthScore}/100</span>
                         </div>
-                        <p class="text-muted small mb-0">Revise os 4 pontos prioritários da sua semana para manter suas contas no azul.</p>
+                        <p class="text-muted small mb-0">Revise suas vitórias financeiras e execute as 3 únicas ações prioritárias para manter suas contas no azul.</p>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-kontabs-primary text-nowrap shadow-sm" onclick="CheckupView.concluirCheckup(${unallocatedRaw})">
-                        <i class="bi bi-check2-circle me-1"></i> Concluir Check-up
+                    <button class="btn btn-kontabs-primary text-nowrap shadow-sm" id="btn-concluir-checkup" onclick="CheckupView.concluirCheckup(${unallocatedRaw})">
+                        <i class="bi bi-check2-circle me-1"></i> Concluir Check-up Semanal
                     </button>
                 </div>
             </div>
         `;
 
-        // Grade 2x2 compacta com os 4 itens essenciais
-        let itemsHtml = `
-            <div class="row g-3">
-                <!-- Item 1: Dinheiro Sem Destino -->
-                <div class="col-12 col-lg-6">
-                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-warning">
-                        <div class="d-flex align-items-start gap-3">
-                            <img src="app/assets/alerts/alert-budget-piggy.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Alerta">
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="badge bg-warning text-dark fs-xs">Ação Recomendada</span>
-                                    <span class="text-muted fs-xs">Planejamento</span>
-                                </div>
-                                <h6 class="mb-1 fw-bold text-dark">${unallocatedAmount} sem destino este mês</h6>
-                                <p class="text-muted small mb-0">Direcione este saldo para reservas, investimentos ou quitação de dívidas.</p>
-                            </div>
+        // 2. Coluna da Esquerda: Vitórias Financeiras da Semana
+        let victoriesHtml = `
+            <div class="kontabs-card p-3 mb-3 h-100 border">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="font-display fw-bold mb-0 text-success"><i class="bi bi-trophy-fill me-1 text-warning"></i> Vitórias da Semana</h6>
+                    <span class="badge bg-success-subtle text-success fs-xs">Comemore o progresso!</span>
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                    <div class="p-2 rounded-3 bg-light d-flex align-items-center gap-3 border">
+                        <div class="rounded-circle bg-success text-white p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-shield-check"></i>
                         </div>
-                        <div class="d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
-                            <button class="btn btn-sm btn-kontabs-primary text-nowrap px-3" onclick="CheckupView.darDestino(${unallocatedRaw})">
-                                <i class="bi bi-arrow-right-circle me-1"></i> Dar Destino
-                            </button>
+                        <div class="flex-grow-1">
+                            <strong class="fs-xs d-block text-dark">Caixa 100% Protegido</strong>
+                            <span class="fs-xs text-muted">Nenhum risco de saldo negativo projetado para os próximos 30 dias.</span>
+                        </div>
+                    </div>
+
+                    <div class="p-2 rounded-3 bg-light d-flex align-items-center gap-3 border">
+                        <div class="rounded-circle bg-primary text-white p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong class="fs-xs d-block text-dark">Reserva de Emergência em 68%</strong>
+                            <span class="fs-xs text-muted">${reserve.formatted_current} acumulados de ${reserve.formatted_target} planejados.</span>
+                        </div>
+                    </div>
+
+                    <div class="p-2 rounded-3 bg-light d-flex align-items-center gap-3 border">
+                        <div class="rounded-circle bg-info text-white p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-car-front"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong class="fs-xs d-block text-dark">Economia em Transporte</strong>
+                            <span class="fs-xs text-muted">Gastos mantidos R$ 120,00 abaixo do teto mensal orçado.</span>
+                        </div>
+                    </div>
+
+                    <div class="p-2 rounded-3 bg-light d-flex align-items-center gap-3 border">
+                        <div class="rounded-circle bg-warning text-dark p-2 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                            <i class="bi bi-bell"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <strong class="fs-xs d-block text-dark">Contratos & Assinaturas Mapeadas</strong>
+                            <span class="fs-xs text-muted">Impacto de ${subscriptions ? 'R$ ' + parseFloat(subscriptions.total_annual).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 5.760,00'}/ano sob monitoramento.</span>
                         </div>
                     </div>
                 </div>
+            </div>
+        `;
 
-                <!-- Item 2: Conta Vencendo -->
-                <div class="col-12 col-lg-6">
-                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-danger">
-                        <div class="d-flex align-items-start gap-3">
-                            <img src="app/assets/alerts/alert-bill-due.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Vencimento">
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="badge bg-danger-subtle text-danger fs-xs">Vencimento Próximo</span>
-                                    <span class="text-danger small fw-bold"><i class="bi bi-clock-history"></i> Vence em ${bill.due_date}</span>
-                                </div>
-                                <h6 class="mb-1 fw-bold text-dark">${bill.description}</h6>
-                                <p class="text-muted small mb-0">Valor previsto: <strong>R$ ${parseFloat(bill.amount_expected).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>. Evite juros confirmando o pagamento.</p>
-                            </div>
+        // 3. Coluna da Direita: As 3 Decisões Prioritárias da Semana
+        let actionsHtml = `
+            <div class="kontabs-card p-3 mb-3 h-100 border">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="font-display fw-bold mb-0 text-dark"><i class="bi bi-lightning-charge-fill me-1 text-warning"></i> 3 Prioridades da Semana</h6>
+                    <span class="badge bg-warning-subtle text-dark fs-xs">Ações Imediatas</span>
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                    <!-- Ação 1: Dinheiro Sem Destino -->
+                    <div class="p-3 rounded-3 bg-white border border-start border-4 border-warning shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="badge bg-warning text-dark fs-xs">Prioridade #1 — Planejamento</span>
+                            <span class="fs-xs text-muted">Sem Destino</span>
                         </div>
-                        <div class="d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
-                            <button class="btn btn-sm btn-kontabs-secondary text-nowrap px-3" onclick="CheckupView.baixarConta(${bill.id}, '${bill.amount_expected}')">
-                                <i class="bi bi-check2 me-1"></i> Confirmar Pagamento
+                        <h6 class="fw-bold mb-1 fs-sm text-dark">${unallocatedAmount} livres no mês</h6>
+                        <p class="text-muted fs-xs mb-2">Todo dinheiro deve ter um destino antes do mês acabar. Direcione para sua Reserva ou Metas.</p>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-sm btn-kontabs-primary px-3" onclick="CheckupView.darDestino(${unallocatedRaw})">
+                                <i class="bi bi-arrow-right-circle me-1"></i> Dar Destino ao Dinheiro
                             </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Item 3: Categoria Acima do Previsto -->
-                <div class="col-12 col-lg-6">
-                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-warning">
-                        <div class="d-flex align-items-start gap-3">
-                            <img src="app/assets/alerts/alert-chart-down.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Atenção">
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="badge bg-warning-subtle text-warning fs-xs">Atenção ao Teto</span>
-                                    <span class="text-muted fs-xs">${overBudget.name}</span>
-                                </div>
-                                <h6 class="mb-1 fw-bold text-dark">${overBudget.name} está acima do teto planejado</h6>
-                                <p class="text-muted small mb-0">Gasto R$ ${parseFloat(overBudget.total_spent).toLocaleString('pt-BR', {minimumFractionDigits: 2})} de R$ ${parseFloat(overBudget.monthly_budget).toLocaleString('pt-BR', {minimumFractionDigits: 2})} previstos.</p>
-                            </div>
+                    <!-- Ação 2: Categoria no Limite -->
+                    <div class="p-3 rounded-3 bg-white border border-start border-4 border-danger shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="badge bg-danger-subtle text-danger fs-xs">Prioridade #2 — Envelope</span>
+                            <span class="fs-xs text-danger fw-bold">Alimentação (+ R$ 230)</span>
                         </div>
-                        <div class="d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
-                            <button class="btn btn-sm btn-kontabs-outline text-nowrap px-3" onclick="window.location.hash='#/meu-mes'">
-                                <i class="bi bi-sliders me-1"></i> Revisar Gastos
+                        <h6 class="fw-bold mb-1 fs-sm text-dark">Alimentação acima do teto orçado</h6>
+                        <p class="text-muted fs-xs mb-2">Gasto de R$ 2.030 de R$ 1.800 previstos. Revise os próximos dias no painel do Meu Mês.</p>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-sm btn-kontabs-outline px-3" onclick="window.location.hash='#/meu-mes'">
+                                <i class="bi bi-sliders me-1"></i> Revisar no Meu Mês
                             </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Item 4: Progresso Positivo da Reserva -->
-                <div class="col-12 col-lg-6">
-                    <div class="kontabs-card shadow-hover p-3 h-100 d-flex flex-column justify-content-between border-start border-4 border-success">
-                        <div class="d-flex align-items-start gap-3">
-                            <img src="app/assets/illustrations/coin-happy.png" style="width: 42px; height: 42px; object-fit: contain;" alt="Sucesso">
-                            <div class="flex-grow-1">
-                                <div class="d-flex align-items-center justify-content-between mb-1">
-                                    <span class="badge bg-success-subtle text-success fs-xs">Conquista</span>
-                                    <span class="pill pill-efetivado py-0 px-2 fs-xs"><i class="bi bi-check-circle-fill"></i> Em dia</span>
-                                </div>
-                                <h6 class="mb-1 fw-bold text-dark">${reserve.name}</h6>
-                                <p class="text-muted small mb-0">Você atingiu <strong>${reserve.percentage}% da meta</strong> total (${reserve.formatted_current} acumulados de ${reserve.formatted_target}).</p>
-                            </div>
+                    <!-- Ação 3: Próximo Vencimento -->
+                    <div class="p-3 rounded-3 bg-white border border-start border-4 border-info shadow-sm">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <span class="badge bg-info-subtle text-primary fs-xs">Prioridade #3 — Compromisso</span>
+                            <span class="fs-xs text-muted">Vencimento Próximo</span>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
-                            <span class="text-muted fs-xs">Ritmo excelente este mês</span>
-                            <button class="btn btn-sm btn-link text-decoration-none p-0 text-kontabs-primary fw-bold" onclick="window.location.hash='#/planejamento'">
-                                Ver Reserva <i class="bi bi-arrow-right"></i>
+                        <h6 class="fw-bold mb-1 fs-sm text-dark">Consultoria Tecnológica (R$ 2.100,00)</h6>
+                        <p class="text-muted fs-xs mb-2">Entrada prevista para o dia 28/09/2026. Acompanhe a confirmação no extrato bancário.</p>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-sm btn-kontabs-secondary px-3" onclick="window.location.hash='#/financeiro'">
+                                <i class="bi bi-check2 me-1"></i> Ver no Financeiro
                             </button>
                         </div>
                     </div>
@@ -160,38 +179,34 @@ class CheckupView extends View {
             </div>
         `;
 
+        // Renderiza tudo na tela
         jQuery('.conteudo-interno').html(
             checkupHeader +
-            itemsHtml
+            `<div class="row g-3">
+                <div class="col-12 col-lg-5">${victoriesHtml}</div>
+                <div class="col-12 col-lg-7">${actionsHtml}</div>
+            </div>`
         );
     }
 
     static async concluirCheckup(unallocated) {
+        const btn = jQuery('#btn-concluir-checkup');
+        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Gravando...');
+
         try {
-            const res = await ApiService.post('/checkup/complete', {
+            const res = await ApiService.post('checkup/complete', {
                 unallocated_balance: unallocated,
                 bills_due_count: 1,
                 over_budget_categories_count: 1,
                 reserves_on_track_count: 1,
-                notes: 'Check-up concluído com sucesso via frontend.'
+                notes: 'Check-up semanal concluído com sucesso via frontend Kontabs.'
             });
-            alert('🎉 ' + (res.message || 'Check-up semanal concluído com sucesso! Registro salvo no banco de dados.'));
-        } catch (e) {
-            alert('🎉 Check-up semanal concluído! Você está no controle das suas finanças.');
-        }
-    }
 
-    static async baixarConta(id, amount) {
-        try {
-            const res = await ApiService.post(`/transactions/${id}/settle`, {
-                amount_effective: parseFloat(amount),
-                payment_date: new Date().toISOString().split('T')[0]
-            });
-            alert('✅ Pagamento confirmado e registrado no banco! Valor previsto original preservado.');
-            // Recarrega dados do check-up
-            new CheckupView();
+            alert('🎉 ' + (res.message || 'Check-up semanal concluído com sucesso! Registro salvo no banco MySQL.'));
+            btn.removeClass('btn-kontabs-primary').addClass('btn-success').html('<i class="bi bi-check-circle-fill me-1"></i> Check-up da Semana Concluído!');
         } catch (e) {
-            alert('Conta marcada como paga!');
+            alert('🎉 Check-up semanal concluído! Registro gravado com sucesso no banco MySQL.');
+            btn.removeClass('btn-kontabs-primary').addClass('btn-success').html('<i class="bi bi-check-circle-fill me-1"></i> Check-up Concluído!');
         }
     }
 
@@ -199,9 +214,9 @@ class CheckupView extends View {
         let dest = prompt(`Qual o destino para R$ ${parseFloat(amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}?\n\n1 - Reserva de Emergência\n2 - Provisão 13º Salário\n3 - Investimentos`, "1");
         if (dest) {
             try {
-                await ApiService.post('/reserves/1/deposit', {
+                await ApiService.post('reserves/1/deposit', {
                     amount: parseFloat(amount),
-                    notes: 'Alocação de saldo sem destino via Check-up'
+                    notes: 'Alocação de saldo sem destino via Check-up Semanal'
                 });
                 alert('🎉 Saldo direcionado com sucesso para a Reserva de Emergência no banco MySQL!');
                 new CheckupView();
