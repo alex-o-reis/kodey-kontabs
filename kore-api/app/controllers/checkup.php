@@ -5,18 +5,6 @@ require_once __DIR__ . '/../services/CheckupService.php';
 
 class Checkup extends Controller
 {
-    protected function getActiveOrgId(): int
-    {
-        $headers = function_exists('getallheaders') ? getallheaders() : [];
-        if (!empty($headers['X-Organization-Id'])) {
-            return (int) $headers['X-Organization-Id'];
-        }
-        if (!empty($_GET['org_id'])) {
-            return (int) $_GET['org_id'];
-        }
-        return 1;
-    }
-
     public function get()
     {
         $orgId = $this->getActiveOrgId();

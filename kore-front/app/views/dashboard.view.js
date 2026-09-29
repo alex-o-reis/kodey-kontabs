@@ -31,26 +31,37 @@ class DashboardView extends View {
     }
 
     render(apiData, forecastData) {
-        // Obtenção dos dados dinâmicos da API ou fallback elegante
         const kpis = apiData ? apiData.kpis : null;
         const alerts = apiData ? apiData.alerts : null;
-        const reserve = apiData ? apiData.reserve : null;
         const bills = (apiData && apiData.upcoming_bills) ? apiData.upcoming_bills : [];
+        const reserves = (apiData && apiData.reserves) ? apiData.reserves : [];
+        const weeklyFlow = (apiData && apiData.weekly_flow) ? apiData.weekly_flow : null;
 
-        const availableStr = kpis ? 'R$ ' + parseFloat(kpis.available_balance).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 20.170,00';
-        const committedStr = kpis ? 'R$ ' + parseFloat(kpis.committed_balance).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 5.640,00';
-        const unallocatedStr = alerts && alerts.unallocated ? alerts.unallocated.formatted_amount : 'R$ 5.260,00';
-        const projectedStr = kpis ? 'R$ ' + parseFloat(kpis.projected_closing).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 7.360,00';
+        const availableVal = kpis ? (parseFloat(kpis.available_balance) || 0) : 0;
+        const committedVal = kpis ? (parseFloat(kpis.committed_balance) || 0) : 0;
+        const unallocatedRaw = kpis ? (parseFloat(kpis.unallocated_balance) || 0) : 0;
+        const projectedVal = kpis ? (parseFloat(kpis.projected_closing) || 0) : 0;
+        const receivedVal = kpis ? (parseFloat(kpis.received_so_far) || 0) : 0;
+        const spentVal = kpis ? (parseFloat(kpis.spent_so_far) || 0) : 0;
 
-        const unallocatedRaw = kpis ? kpis.unallocated_balance : 5260;
-        const missingRaw = alerts && alerts.missing_origin ? alerts.missing_origin.total_amount : 480;
+        const availableStr = 'R$ ' + availableVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        const committedStr = 'R$ ' + committedVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        const unallocatedStr = 'R$ ' + unallocatedRaw.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        const projectedStr = 'R$ ' + projectedVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-        // 1. Mensagem de Boas-Vindas
+        const missingRaw = alerts && alerts.missing_origin ? (parseFloat(alerts.missing_origin.total_amount) || 0) : 0;
+
+        // 1. Mensagem de Boas-Vindas Dinâmica
+        const user = ApiService.getUser();
+        const firstName = user && user.name ? user.name.split(' ')[0] : 'você';
+        const currentMonthName = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const monthTitle = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
+
         let welcomeHeader = `
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div>
-                    <h2 class="mb-1 font-display">Olá, Alex! 👋</h2>
-                    <p class="text-muted mb-0">Aqui está o panorama financeiro em <strong>Setembro de 2026</strong> [Conectado ao MySQL].</p>
+                    <h2 class="mb-1 font-display">Olá, ${firstName}! 👋</h2>
+                    <p class="text-muted mb-0">Aqui está o panorama financeiro em <strong>${monthTitle}</strong>.</p>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-kontabs-secondary" onclick="window.location.hash='#/checkup'">
@@ -63,107 +74,202 @@ class DashboardView extends View {
             </div>
         `;
 
-        // 2. KPIs de Primeira Classe
+        // 2. Banner de Primeiros Passos para Contas Novas
+        const isFreshAccount = (availableVal === 0 && committedVal === 0 && receivedVal === 0 && spentVal === 0 && bills.length === 0);
+        let onboardingBanner = '';
+        if (isFreshAccount) {
+            onboardingBanner = `
+                <div class="kontabs-card p-4 mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #FFFDF7 0%, #F5FFF9 100%); border-left: 6px solid var(--kk-green-700) !important; border-radius: 20px;">
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3 mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <img src="app/assets/illustrations/mascot-workspace.png" style="width: 52px; height: 52px; object-fit: contain;">
+                            <div>
+                                <h4 class="font-display fw-bold mb-1" style="color: var(--kk-green-700);">Bem-vindo ao Kodey Kontabs! 🚀</h4>
+                                <p class="text-muted small mb-0">Cada real com uma origem. Cada real com um destino. Siga os 3 passos para configurar suas finanças:</p>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-kontabs-outline rounded-pill px-3" onclick="KontabsTutorial.start()">
+                                <i class="bi bi-mortarboard-fill me-1 text-success"></i> Ver Tutorial Passo a Passo
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 bg-white rounded-3 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge rounded-circle bg-success text-white" style="width: 24px; height: 24px; display: grid; place-items: center;">1</span>
+                                        <strong class="fs-sm">Cadastre suas Contas</strong>
+                                    </div>
+                                    <p class="text-muted fs-xs mb-3">Configure suas contas correntes e informe os saldos reais para controlar seu caixa.</p>
+                                </div>
+                                <button class="btn btn-sm btn-kontabs-outline w-100" onclick="window.location.hash='#/contas'">
+                                    <i class="bi bi-wallet2 me-1"></i> Ir para Contas
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 bg-white rounded-3 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge rounded-circle bg-primary text-white" style="width: 24px; height: 24px; display: grid; place-items: center;">2</span>
+                                        <strong class="fs-sm">Lance suas Contas</strong>
+                                    </div>
+                                    <p class="text-muted fs-xs mb-3">Cadastre suas receitas e compromissos previstos do mês para manter o fluxo protegido.</p>
+                                </div>
+                                <button class="btn btn-sm btn-kontabs-primary w-100" onclick="KontabsUI.openNovaMovimentacaoModal()">
+                                    <i class="bi bi-plus-lg me-1"></i> Nova Movimentação
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="p-3 bg-white rounded-3 border h-100 d-flex flex-column justify-content-between shadow-sm">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge rounded-circle bg-warning text-dark" style="width: 24px; height: 24px; display: grid; place-items: center;">3</span>
+                                        <strong class="fs-sm">Defina suas Metas</strong>
+                                    </div>
+                                    <p class="text-muted fs-xs mb-3">Crie sua Reserva de Emergência ou metas patrimoniais para dar destino ao saldo livre.</p>
+                                </div>
+                                <button class="btn btn-sm btn-kontabs-outline w-100" onclick="window.location.hash='#/planejamento'">
+                                    <i class="bi bi-piggy-bank me-1"></i> Ver Planejamento
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 3. KPIs de Primeira Classe
         let kpisRow = `
             <div class="row g-3 mb-4">
                 <div class="col-12 col-sm-6 col-xl-3">
-                    ${KontabsUI.kpi("Saldo Disponível", availableStr, "+12%", "success", "Em contas ativas", "app/assets/illustrations/wallet-green.png")}
+                    ${KontabsUI.kpi("Saldo Disponível", availableStr, availableVal > 0 ? "+12%" : "Em dia", "success", "Em contas ativas", "app/assets/illustrations/wallet-green.png")}
                 </div>
                 <div class="col-12 col-sm-6 col-xl-3">
-                    ${KontabsUI.kpi("Compromissos", committedStr, "No orçamento", "info", "Despesas & provisões", "app/assets/illustrations/receipt-happy.png")}
+                    ${KontabsUI.kpi("Compromissos", committedStr, committedVal > 0 ? "No orçamento" : "0 pendentes", "info", "Despesas & provisões", "app/assets/illustrations/receipt-happy.png")}
                 </div>
                 <div class="col-12 col-sm-6 col-xl-3">
-                    ${KontabsUI.kpi("SEM DESTINO", unallocatedStr, "Atenção", "warning", "Dinheiro livre no mês", "app/assets/alerts/alert-budget-piggy.png")}
+                    ${KontabsUI.kpi("SEM DESTINO", unallocatedStr, unallocatedRaw > 0 ? "Atenção" : "Equilibrado", unallocatedRaw > 0 ? "warning" : "success", "Dinheiro livre no mês", "app/assets/alerts/alert-budget-piggy.png")}
                 </div>
                 <div class="col-12 col-sm-6 col-xl-3">
-                    ${KontabsUI.kpi("Previsão Fechamento", projectedStr, "Positivo", "success", "Saldo projetado no azul", "app/assets/illustrations/chart-growth.png")}
+                    ${KontabsUI.kpi("Previsão Fechamento", projectedStr, projectedVal >= 0 ? "Positivo" : "Negativo", projectedVal >= 0 ? "success" : "danger", "Saldo projetado no mês", "app/assets/illustrations/chart-growth.png")}
                 </div>
             </div>
         `;
 
-        // 3. Alertas Fundamentais (Princípio Kontabs: Origem e Destino)
-        let alertSemDestino = KontabsUI.alert(
-            'warning',
-            `Você possui ${unallocatedStr} ainda sem destino.`,
-            'Todo dinheiro deve ter um destino antes do mês acabar. Direcione para sua Reserva de Emergência, Viagem ou Investimentos.',
-            'Dar Destino ao Dinheiro',
-            `DashboardView.openModalDestino(${unallocatedRaw})`,
-            'app/assets/alerts/alert-budget-piggy.png'
-        );
+        // 4. Alertas (Apenas quando houver valor real)
+        let alertsContent = '';
+        if (unallocatedRaw > 0.01) {
+            alertsContent += `
+                <div class="col-12 ${missingRaw > 0.01 ? 'col-lg-6' : 'col-12'}">
+                    ${KontabsUI.alert(
+                        'warning',
+                        `Você possui ${unallocatedStr} ainda sem destino.`,
+                        'Todo dinheiro deve ter um destino antes do mês acabar. Direcione para sua Reserva de Emergência, Metas ou Investimentos.',
+                        'Dar Destino ao Dinheiro',
+                        `DashboardView.openModalDestino(${unallocatedRaw})`,
+                        'app/assets/alerts/alert-budget-piggy.png'
+                    )}
+                </div>
+            `;
+        }
 
-        let alertSemOrigem = KontabsUI.alert(
-            'danger',
-            `Existem R$ ${parseFloat(missingRaw).toLocaleString('pt-BR', {minimumFractionDigits: 2})} utilizados cuja origem ainda não foi informada.`,
-            'Identificamos pagamentos que excederam as receitas declaradas. Informe se o recurso veio de cartão, limite especial ou reserva.',
-            'Informar Origem dos Recursos',
-            'DashboardView.openModalOrigem()',
-            'app/assets/alerts/alert-wallet-empty.png'
-        );
+        if (missingRaw > 0.01) {
+            alertsContent += `
+                <div class="col-12 ${unallocatedRaw > 0.01 ? 'col-lg-6' : 'col-12'}">
+                    ${KontabsUI.alert(
+                        'danger',
+                        `Existem R$ ${parseFloat(missingRaw).toLocaleString('pt-BR', {minimumFractionDigits: 2})} utilizados cuja origem ainda não foi informada.`,
+                        'Identificamos pagamentos que excederam as receitas declaradas. Informe se o recurso veio de cartão, limite especial ou reserva.',
+                        'Informar Origem dos Recursos',
+                        'DashboardView.openModalOrigem()',
+                        'app/assets/alerts/alert-wallet-empty.png'
+                    )}
+                </div>
+            `;
+        }
 
-        // 4. Card do Motor de Projeção de Fluxo de Caixa Futuro (FASE 5)
+        let alertsRow = alertsContent ? `<div class="row g-3 mb-4">${alertsContent}</div>` : '';
+
+        // 5. Card do Motor de Projeção de Fluxo de Caixa Futuro
         let forecastCard = this.renderForecastCard(forecastData);
 
-        // 5. Seção Intermediária: Gráfico de Fluxo Semanal e Metas
+        // 6. Seção Intermediária: Gráfico de Fluxo Semanal e Metas
+        const weeklyLabels = weeklyFlow && weeklyFlow.labels ? weeklyFlow.labels : ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"];
+        const weeklyExpected = weeklyFlow && weeklyFlow.expected ? weeklyFlow.expected : [0, 0, 0, 0, 0];
+        const weeklyEffective = weeklyFlow && weeklyFlow.effective ? weeklyFlow.effective : [0, 0, 0, 0, 0];
+
         let chartCol = `
             <div class="col-12 col-lg-8 mb-4">
                 ${KontabsUI.card(
                     "Fluxo Financeiro do Mês (Previsto x Realizado)",
                     UI.chart("chart-fluxo-mes", {
                         type: "column",
-                        labels: ["Semana 1", "Semana 2", "Semana 3", "Semana 4", "Semana 5"],
+                        labels: weeklyLabels,
                         showValues: true,
                         showLegend: true,
                         series: [
-                            { name: "Previsto", data: [3200, 2400, 1800, 2100, 900] },
-                            { name: "Realizado", data: [3150, 2630, 1750, 1400, 0] }
+                            { name: "Previsto", data: weeklyExpected },
+                            { name: "Realizado", data: weeklyEffective }
                         ]
                     }),
-                    '<div class="d-flex justify-content-between text-muted small"><span>Receitas Previstas: <strong>R$ 14.500</strong></span><span>Despesas Previstas: <strong>R$ 5.640</strong></span></div>'
+                    `<div class="d-flex justify-content-between text-muted small">
+                        <span>Receitas Realizadas: <strong class="text-success">R$ ${receivedVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></span>
+                        <span>Despesas Realizadas: <strong class="text-danger">R$ ${spentVal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></span>
+                    </div>`
                 )}
             </div>
         `;
 
-        let reserveTitle = reserve ? reserve.name : "Reserva de Emergência";
-        let reservePct = reserve ? reserve.percentage : 68;
-        let reserveFormatted = reserve ? reserve.formatted : "R$ 20.400 / R$ 30.000";
+        // Renderização Dinâmica de Reservas e Metas do Usuário
+        let metasInnerHtml = '';
+        if (reserves && reserves.length > 0) {
+            reserves.slice(0, 3).forEach(r => {
+                metasInnerHtml += `
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold">${r.name}</span>
+                            <span class="badge bg-success-subtle text-success">${r.percentage}%</span>
+                        </div>
+                        <div class="text-muted small mb-2">${r.formatted}</div>
+                        ${KontabsUI.progress("prog-res-" + r.id, r.current, r.target, "", "success")}
+                    </div>
+                `;
+            });
+            metasInnerHtml += `
+                <div class="p-3 rounded-4 bg-light d-flex align-items-center gap-3 mt-4">
+                    <img src="app/assets/illustrations/coin-happy.png" style="width: 44px; height: 44px; object-fit: contain;">
+                    <div>
+                        <div class="fw-bold fs-sm">Seu dinheiro com propósito</div>
+                        <div class="text-muted fs-xs">Metas e reservas em acompanhamento contínuo.</div>
+                    </div>
+                </div>
+            `;
+        } else {
+            metasInnerHtml = `
+                <div class="text-center py-4">
+                    <img src="app/assets/illustrations/coin-happy.png" style="width: 48px; height: 48px; object-fit: contain;" class="mb-2">
+                    <div class="fw-bold fs-sm">Nenhuma reserva cadastrada</div>
+                    <p class="text-muted fs-xs mb-3">Defina sua Reserva de Emergência para proteger suas contas.</p>
+                    <a href="#/planejamento" class="btn btn-sm btn-kontabs-primary">Criar Primeira Reserva</a>
+                </div>
+            `;
+        }
 
         let metasCol = `
             <div class="col-12 col-lg-4 mb-4">
                 ${KontabsUI.card(
                     "Reservas & Destinos",
-                    `
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold">${reserveTitle}</span>
-                            <span class="badge bg-success-subtle text-success">${reservePct}%</span>
-                        </div>
-                        <div class="text-muted small mb-2">${reserveFormatted}</div>
-                        ${KontabsUI.progress("prog-reserva", 20400, 30000, "", "success")}
-                    </div>
-
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="fw-bold">Provisão 13º Salário</span>
-                            <span class="badge bg-info-subtle text-primary">50%</span>
-                        </div>
-                        <div class="text-muted small mb-2">R$ 6.000 / R$ 12.000</div>
-                        ${KontabsUI.progress("prog-13", 6000, 12000, "", "info")}
-                    </div>
-
-                    <div class="p-3 rounded-4 bg-light d-flex align-items-center gap-3 mt-4">
-                        <img src="app/assets/illustrations/coin-happy.png" style="width: 44px; height: 44px; object-fit: contain;">
-                        <div>
-                            <div class="fw-bold fs-sm">Seu dinheiro está trabalhando</div>
-                            <div class="text-muted fs-xs">Meta de emergência em ritmo exemplar!</div>
-                        </div>
-                    </div>
-                    `,
+                    metasInnerHtml,
                     `<a href="#/planejamento" class="btn btn-sm btn-kontabs-outline w-100">Gerenciar Todas as Metas</a>`
                 )}
             </div>
         `;
 
-        // 6. Tabela de Próximos Vencimentos
+        // 7. Tabela de Próximos Vencimentos Dinâmica
         let tableHeaders = ["Descrição", "Categoria", "Valor Previsto", "Vencimento", "Status", "Ação"];
         let tableRows = [];
 
@@ -180,12 +286,12 @@ class DashboardView extends View {
             });
         } else {
             tableRows.push([
-                `<strong>Consultoria Tecnológica Especializada</strong>`,
-                `<span class="badge bg-light text-dark border">Consultoria</span>`,
-                `R$ 2.100,00`,
-                `<span class="text-success fw-bold">28/09/2026</span>`,
-                KontabsUI.status("previsto", "Receita Prevista"),
-                `<button class="btn btn-sm btn-kontabs-primary" onclick="DashboardView.efetivar(1, 'Consultoria', 2100)">Confirmar Recebimento</button>`
+                `<span class="text-muted fst-italic">Nenhum compromisso previsto pendente para este período.</span>`,
+                `-`,
+                `R$ 0,00`,
+                `-`,
+                KontabsUI.status("efetivado", "Em Dia"),
+                `<button class="btn btn-sm btn-kontabs-primary" onclick="KontabsUI.openNovaMovimentacaoModal()"><i class="bi bi-plus-lg me-1"></i>Novo Lançamento</button>`
             ]);
         }
 
@@ -198,7 +304,7 @@ class DashboardView extends View {
             </div>`
         );
 
-        // 7. Modais de Ação Rápida
+        // 8. Modais de Ação Rápida
         let modalDestino = KontabsUI.modal(
             "modal-destino",
             "Dar Destino ao Dinheiro Livre",
@@ -207,7 +313,7 @@ class DashboardView extends View {
             ${KontabsUI.moneyInput("modal-val-destino", "Valor a Destinar", unallocatedRaw.toString(), true)}
             ${KontabsUI.select("modal-tipo-destino", "Destino dos Recursos", [
                 { value: "1", text: "Reserva de Emergência" },
-                { value: "2", text: "Provisão 13º Salário" }
+                { value: "2", text: "Provisão e Metas" }
             ], "1", true)}
             ${KontabsUI.input("text", "modal-obs-destino", "Observação (Opcional)", "", false, "Ex: Aporte extraordinário")}
             `,
@@ -222,13 +328,13 @@ class DashboardView extends View {
             "Informar Origem dos Recursos Utilizados",
             `
             <div class="alert alert-warning mb-3">
-                <i class="bi bi-info-circle me-1"></i> Identificamos <strong>R$ 480,00</strong> de saídas além das entradas registradas.
+                <i class="bi bi-info-circle me-1"></i> Identificamos <strong>R$ ${parseFloat(missingRaw).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong> de saídas além das entradas registradas.
             </div>
             <p class="text-muted small">Para que o sistema mantenha o princípio fundamental de <em>origem e destino</em>, informe de onde veio este recurso:</p>
             ${KontabsUI.select("modal-select-origem", "Origem Real do Dinheiro", [
-                { value: "cartao", text: "Cartão de Crédito Inter PJ" },
+                { value: "cartao", text: "Cartão de Crédito" },
                 { value: "reserva", text: "Resgate da Reserva de Emergência" },
-                { value: "emprestimo", text: "Aporte de Capital / Sócio" }
+                { value: "emprestimo", text: "Aporte de Capital / Outros Recursos" }
             ], "cartao", true)}
             ${KontabsUI.input("text", "modal-obs-origem", "Observação", "", false, "Ex: Pago com limite")}
             `,
@@ -241,11 +347,9 @@ class DashboardView extends View {
         // Renderiza tudo na área de conteúdo
         jQuery('.conteudo-interno').html(
             welcomeHeader +
+            onboardingBanner +
             kpisRow +
-            `<div class="row g-3 mb-4">
-                <div class="col-12 col-lg-6">${alertSemDestino}</div>
-                <div class="col-12 col-lg-6">${alertSemOrigem}</div>
-            </div>` +
+            alertsRow +
             forecastCard +
             `<div class="row">${chartCol}${metasCol}</div>` +
             tableCard +
@@ -257,13 +361,18 @@ class DashboardView extends View {
         if (forecastData && forecastData.daily_series) {
             setTimeout(() => this.renderForecastChart(forecastData), 100);
         }
+
+        // Verifica e dispara tutorial no primeiro acesso
+        if (typeof KontabsTutorial !== 'undefined' && KontabsTutorial.checkAutoStart) {
+            KontabsTutorial.checkAutoStart();
+        }
     }
 
     renderForecastCard(forecastData) {
-        const curLiquid = forecastData ? forecastData.current_liquid_balance : 20170;
-        const projFinal = forecastData ? forecastData.projected_final_balance : 22770;
-        const minBal = forecastData ? forecastData.min_projected_balance : 20170;
-        const minDate = forecastData ? forecastData.min_projected_date_formatted : '25/09/2026';
+        const curLiquid = forecastData ? (parseFloat(forecastData.current_liquid_balance) || 0) : 0;
+        const projFinal = forecastData ? (parseFloat(forecastData.projected_final_balance) || 0) : 0;
+        const minBal = forecastData ? (parseFloat(forecastData.min_projected_balance) || 0) : 0;
+        const minDate = (forecastData && forecastData.min_projected_date_formatted) ? forecastData.min_projected_date_formatted : '-';
         const hasRisk = forecastData ? forecastData.has_risk : false;
         const riskEvent = forecastData ? forecastData.risk_event : null;
 

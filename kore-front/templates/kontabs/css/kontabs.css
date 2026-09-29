@@ -764,3 +764,70 @@ a:hover {
         align-items: flex-start;
     }
 }
+
+/* ==========================================================
+   BOTÃO FLUTUANTE DE AJUDA & CENTRAL DE SUPORTE
+   ========================================================== */
+#kontabs-floating-help-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1040;
+}
+
+.btn-kontabs-floating-help {
+    background-color: var(--kk-green-700);
+    color: #ffffff !important;
+    border-radius: 9999px;
+    padding: 10px 18px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 10px 30px rgba(14, 90, 79, 0.35);
+    transition: all 0.25s ease-in-out;
+}
+
+.btn-kontabs-floating-help:hover {
+    background-color: var(--kk-green-600);
+    transform: translateY(-3px) scale(1.03);
+    box-shadow: 0 14px 36px rgba(14, 90, 79, 0.45);
+    color: #ffffff !important;
+}
+
+.pulse-indicator {
+    width: 9px;
+    height: 9px;
+    background-color: var(--kk-green-300);
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(140, 233, 154, 0.7);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(140, 233, 154, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(140, 233, 154, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(140, 233, 154, 0);
+    }
+}
+
+/* Tutorial & Modal Polish */
+#modal-kontabs-tutorial .modal-content {
+    box-shadow: 0 24px 60px rgba(14, 90, 79, 0.22) !important;
+}
+
+.hover-shadow {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-shadow:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08) !important;
+}
+

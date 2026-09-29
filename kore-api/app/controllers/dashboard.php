@@ -6,18 +6,6 @@ require_once __DIR__ . '/../services/DestinyService.php';
 
 class Dashboard extends Controller
 {
-    protected function getActiveOrgId(): int
-    {
-        $headers = function_exists('getallheaders') ? getallheaders() : [];
-        if (!empty($headers['X-Organization-Id'])) {
-            return (int) $headers['X-Organization-Id'];
-        }
-        if (!empty($_GET['org_id'])) {
-            return (int) $_GET['org_id'];
-        }
-        return 1;
-    }
-
     public function get()
     {
         $orgId = $this->getActiveOrgId();
@@ -35,26 +23,41 @@ class Dashboard extends Controller
         // Dinheiro sem origem
         $missingOriginInfo = DestinyService::getMissingOriginInfo($orgId, $month);
 
-        // Reserva de emergência principal
-        $stmt = Model::query(
-            "SELECT id, name, target_amount, current_amount 
+        // Todas as reservas ativas da organização
+        $stmtAllRes = Model::query(
+            "SELECT id, name, type, target_amount, current_amount, color 
              FROM reserves 
-             WHERE organization_id = ? AND type = 'emergency' LIMIT 1",
+             WHERE organization_id = ? AND is_active = 1 
+             ORDER BY id ASC",
             [$orgId]
         );
-        $reserve = $stmt->fetch(PDO::FETCH_ASSOC);
+        $reservesList = [];
         $reserveData = null;
-        if ($reserve) {
-            $target = (float) $reserve['target_amount'];
-            $current = (float) $reserve['current_amount'];
-            $reserveData = [
-                'name' => $reserve['name'],
+        $allRes = $stmtAllRes->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($allRes as $r) {
+            $target = (float) $r['target_amount'];
+            $current = (float) $r['current_amount'];
+            $item = [
+                'id' => (int) $r['id'],
+                'name' => $r['name'],
+                'type' => $r['type'],
                 'target' => $target,
                 'current' => $current,
-                'percentage' => $target > 0 ? round(($current / $target) * 100) : 0,
+                'color' => $r['color'] ?: '#0F7A4A',
+                'percentage' => $target > 0 ? min(100, round(($current / $target) * 100)) : 0,
                 'formatted' => 'R$ ' . number_format($current, 2, ',', '.') . ' / R$ ' . number_format($target, 2, ',', '.')
             ];
+            $reservesList[] = $item;
+            if (!$reserveData && $r['type'] === 'emergency') {
+                $reserveData = $item;
+            }
         }
+        if (!$reserveData && count($reservesList) > 0) {
+            $reserveData = $reservesList[0];
+        }
+
+        // Fluxo semanal do mês
+        $weeklyFlow = BalanceService::getWeeklyFlow($orgId, $month);
 
         // Próximos 5 vencimentos
         $stmt = Model::query(
@@ -77,7 +80,9 @@ class Dashboard extends Controller
                     'unallocated_balance' => $unallocatedInfo['unallocated_amount'],
                     'projected_closing' => $monthlySummary['projected_closing'],
                     'received_so_far' => $monthlySummary['received_so_far'],
+                    'to_receive' => $monthlySummary['to_receive'],
                     'spent_so_far' => $monthlySummary['spent_so_far'],
+                    'to_pay' => $monthlySummary['to_pay'],
                     'reserved_so_far' => $monthlySummary['reserved_so_far']
                 ],
                 'alerts' => [
@@ -85,6 +90,8 @@ class Dashboard extends Controller
                     'missing_origin' => $missingOriginInfo
                 ],
                 'reserve' => $reserveData,
+                'reserves' => $reservesList,
+                'weekly_flow' => $weeklyFlow,
                 'upcoming_bills' => $upcomingBills
             ]
         ]);

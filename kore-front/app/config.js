@@ -1,11 +1,26 @@
 /**
  * KoreConfig — Configuração Oficial do Frontend Kodey Kontabs
  * Powered by Kore Framework (KKF)
+ * Suporte automático a Localhost e Produção Online (kontabs.kodey.com.br -> kontabsapi.kodey.com.br)
  */
+const isBrowserEnv = typeof window !== 'undefined' && window.location;
+const isLocalHostEnv = isBrowserEnv ? (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '::1' ||
+    window.location.hostname.endsWith('.local') ||
+    window.location.hostname.endsWith('.test')
+) : false;
+
+const resolvedApiUrl = (isBrowserEnv && window.KONTABS_API_URL) ?
+    window.KONTABS_API_URL :
+    (isLocalHostEnv ? 'http://localhost:8000/' : 'https://kontabsapi.kodey.com.br/');
+
 const KoreConfig = {
     APP_NAME: 'Kodey Kontabs',
     TAGLINE: 'Cada real com uma origem. Cada real com um destino.',
-    API_URL: (typeof window !== 'undefined' && window.KONTABS_API_URL) ? window.KONTABS_API_URL : 'http://localhost:8000/',
+    API_URL: resolvedApiUrl,
+    IS_LOCAL: isLocalHostEnv,
     DEFAULT_ROUTE: '#/',
 
     // Rotas da Aplicação Kontabs
@@ -19,7 +34,8 @@ const KoreConfig = {
         { url: '#/checkup', controller: 'CheckupController' },
         { url: '#/relatorios', controller: 'RelatoriosController' },
         { url: '#/showcase', controller: 'ShowcaseController' },
-        { url: '#/login', controller: 'LoginController' }
+        { url: '#/login', controller: 'LoginController' },
+        { url: '#/register', controller: 'LoginController' }
     ],
 
     // Menu Lateral Oficial do Kontabs
@@ -31,7 +47,6 @@ const KoreConfig = {
         { title: 'Planejamento & Metas', url: '#/planejamento', icon: 'bi-piggy-bank-fill', type: 'item' },
         { title: 'Financeiro', url: '#/financeiro', icon: 'bi-cash-coin', type: 'item' },
         { title: 'Check-up Semanal', url: '#/checkup', icon: 'bi-shield-check', type: 'item' },
-        { title: 'Relatórios', url: '#/relatorios', icon: 'bi-bar-chart-line-fill', type: 'item' },
-        { title: 'UI Showcase', url: '#/showcase', icon: 'bi-palette2', type: 'item' }
+        { title: 'Relatórios', url: '#/relatorios', icon: 'bi-bar-chart-line-fill', type: 'item' }
     ]
 };

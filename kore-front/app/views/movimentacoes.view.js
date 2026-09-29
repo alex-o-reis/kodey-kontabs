@@ -127,15 +127,15 @@ class MovimentacoesView extends View {
             });
         } else {
             rows.push([
-                `2026-09-26`,
-                `<span class="badge bg-danger-subtle text-danger"><i class="bi bi-arrow-up-right"></i> Despesa</span>`,
-                `<strong>Conta de Energia Elétrica — CEMIG</strong>`,
-                `Moradia & Escritório`,
-                `Banco Inter PJ`,
-                `R$ 350,00`,
-                `<span class="text-muted">-</span>`,
-                KontabsUI.status("previsto", "Previsto"),
-                `<button class="btn btn-sm btn-kontabs-primary py-1 px-2" onclick="alert('Confirmar liquidação de R$ 350,00?')">Baixar</button>`
+                `-`,
+                `-`,
+                `<span class="text-muted fst-italic">Nenhuma movimentação cadastrada neste mês para esta organização.</span>`,
+                `-`,
+                `-`,
+                `R$ 0,00`,
+                `R$ 0,00`,
+                KontabsUI.status("efetivado", "Sem registros"),
+                `<button class="btn btn-sm btn-kontabs-primary py-1 px-2" onclick="MovimentacoesView.openModalNovo()"><i class="bi bi-plus-lg me-1"></i>Lançar</button>`
             ]);
         }
 
@@ -143,8 +143,8 @@ class MovimentacoesView extends View {
             "Extrato Geral de Movimentações — Persistido no MySQL",
             KontabsUI.table(headers, rows),
             `<div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
-                <span class="text-muted small">Exibindo ${rows.length} movimentações no banco de dados</span>
-                <span class="badge bg-light text-dark border">Ambiente MySQL Online: db.opn1.net</span>
+                <span class="text-muted small">Exibindo ${transactions ? transactions.length : 0} movimentações no banco de dados</span>
+                <span class="badge bg-light text-dark border">Ambiente Seguro Kodey Kontabs</span>
             </div>`
         );
 

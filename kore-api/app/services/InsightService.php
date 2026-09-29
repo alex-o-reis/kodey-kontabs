@@ -117,20 +117,12 @@ class InsightService
             ];
         }
 
-        if (empty($items)) {
-            $items = [
-                ['name' => 'Licença de Software e Cloud', 'category' => 'Serviços de TI', 'monthly_amount' => 450.00, 'annual_impact' => 5400.00],
-                ['name' => 'Internet Fibra Dedicada', 'category' => 'Moradia & Escritório', 'monthly_amount' => 199.90, 'annual_impact' => 2398.80]
-            ];
-            $totalMonthly = 649.90;
-        }
-
         return [
             'total_monthly' => round($totalMonthly, 2),
             'total_annual' => round($totalMonthly * 12, 2),
             'count' => count($items),
             'items' => $items,
-            'tip' => "Assinaturas e contratos recorrentes representam R$ " . number_format($totalMonthly * 12, 2, ',', '.') . " do seu orçamento anual."
+            'tip' => !empty($items) ? ("Assinaturas e contratos recorrentes representam R$ " . number_format($totalMonthly * 12, 2, ',', '.') . " do seu orçamento anual.") : "Nenhuma assinatura recorrente cadastrada no momento."
         ];
     }
 
@@ -179,21 +171,41 @@ class InsightService
         $forecastService = new ForecastService();
         $forecast = $forecastService->calculateForecast($orgId, '30d');
 
-        // Vitórias Financeiras
+        // Reserva de Emergência real da organização
+        $resStmt = Model::query("SELECT name, target_amount, current_amount FROM reserves WHERE organization_id = ? AND type = 'emergency' LIMIT 1", [$orgId]);
+        $emergencyRes = $resStmt->fetch(PDO::FETCH_ASSOC);
+        $resPct = 0;
+        $resCurrent = 0.0;
+        if ($emergencyRes && (float)$emergencyRes['target_amount'] > 0) {
+            $resCurrent = (float)$emergencyRes['current_amount'];
+            $resPct = round(($resCurrent / (float)$emergencyRes['target_amount']) * 100);
+        }
+
+        // Vitórias Financeiras Dinâmicas
         $victories = [
             [
                 'title' => 'Caixa 100% Protegido',
                 'description' => 'Nenhum risco de saldo negativo projetado para os próximos 30 dias.',
                 'icon' => 'bi-shield-check',
                 'color' => 'success'
-            ],
-            [
-                'title' => 'Reserva de Emergência Ativa',
-                'description' => 'Você já acumulou 68% da meta estipulada para tranquilidade financeira.',
-                'icon' => 'bi-graph-up-arrow',
-                'color' => 'primary'
             ]
         ];
+
+        if ($resCurrent > 0) {
+            $victories[] = [
+                'title' => 'Reserva de Emergência Ativa',
+                'description' => "Você já acumulou {$resPct}% da meta estipulada para tranquilidade financeira.",
+                'icon' => 'bi-graph-up-arrow',
+                'color' => 'primary'
+            ];
+        } else {
+            $victories[] = [
+                'title' => 'Metas e Reservas Configuradas',
+                'description' => 'Sua estrutura de proteção está pronta para receber os primeiros aportes.',
+                'icon' => 'bi-piggy-bank',
+                'color' => 'primary'
+            ];
+        }
 
         // Se houver categoria com economia, adiciona vitória
         foreach ($anomalies as $anom) {
@@ -259,9 +271,17 @@ class InsightService
             'urgency' => 'baixa'
         ];
 
+        // Cálculo dinâmico do score de saúde financeira (0 a 100)
+        $score = 100;
+        if (!empty($duplicates)) $score -= 10;
+        if (!empty($anomalies)) $score -= (count($anomalies) * 10);
+        $score = max(50, min(100, $score));
+
+        $label = $score >= 85 ? 'Saúde Financeira Forte' : ($score >= 70 ? 'Saúde Financeira Estável' : 'Atenção ao Caixa');
+
         return [
-            'health_score' => 88,
-            'health_label' => 'Saúde Financeira Forte',
+            'health_score' => $score,
+            'health_label' => $label,
             'victories' => $victories,
             'priority_actions' => array_slice($actions, 0, 3)
         ];

@@ -34,24 +34,34 @@ class MeuMesView extends View {
         const categories = (apiData && apiData.categories) ? apiData.categories : [];
         const chartData = (apiData && apiData.chart) ? apiData.chart : null;
 
-        const receivedStr = summary ? 'R$ ' + parseFloat(summary.received_so_far).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 12.400,00';
-        const spentStr = summary ? 'R$ ' + parseFloat(summary.spent_so_far).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 5.640,00';
-        const reservedStr = summary ? 'R$ ' + parseFloat(summary.reserved_so_far).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 2.000,00';
-        const closingStr = summary ? 'R$ ' + parseFloat(summary.projected_closing).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 7.360,00';
+        const receivedVal = summary ? (parseFloat(summary.received_so_far) || 0) : 0;
+        const spentVal = summary ? (parseFloat(summary.spent_so_far) || 0) : 0;
+        const reservedVal = summary ? (parseFloat(summary.reserved_so_far) || 0) : 0;
+        const closingVal = summary ? (parseFloat(summary.projected_closing) || 0) : 0;
+        const toReceiveVal = summary ? (parseFloat(summary.to_receive) || 0) : 0;
+        const toPayVal = summary ? (parseFloat(summary.to_pay) || 0) : 0;
 
-        const toReceiveStr = summary ? '+R$ ' + parseFloat(summary.to_receive).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '+R$ 2.100';
-        const toPayStr = summary ? 'R$ ' + parseFloat(summary.to_pay).toLocaleString('pt-BR', {minimumFractionDigits: 2}) + ' a pagar' : 'R$ 350 a pagar';
+        const receivedStr = 'R$ ' + receivedVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        const spentStr = 'R$ ' + spentVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        const reservedStr = 'R$ ' + reservedVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        const closingStr = 'R$ ' + closingVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+        const toReceiveStr = '+R$ ' + toReceiveVal.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        const toPayStr = 'R$ ' + toPayVal.toLocaleString('pt-BR', {minimumFractionDigits: 2}) + ' a pagar';
 
         // Seletor de Mês e Resumo
+        const currentMonthName = new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const monthTitle = currentMonthName.charAt(0).toUpperCase() + currentMonthName.slice(1);
+
         let monthHeader = `
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
                 <div class="d-flex align-items-center gap-3">
                     <div class="btn-group shadow-sm">
                         <button class="btn btn-sm btn-kontabs-outline"><i class="bi bi-chevron-left"></i></button>
-                        <button class="btn btn-sm btn-kontabs-dark px-3 fw-bold">Setembro de 2026</button>
+                        <button class="btn btn-sm btn-kontabs-dark px-3 fw-bold">${monthTitle}</button>
                         <button class="btn btn-sm btn-kontabs-outline"><i class="bi bi-chevron-right"></i></button>
                     </div>
-                    <span class="badge bg-success-subtle text-success fs-xs fw-bold px-3 py-2 rounded-pill">Mês em andamento — Dados MySQL</span>
+                    <span class="badge bg-success-subtle text-success fs-xs fw-bold px-3 py-2 rounded-pill">Mês em andamento</span>
                 </div>
                 <div class="d-flex gap-2">
                     <button class="btn btn-sm btn-kontabs-outline" onclick="MeuMesView.abrirModalAjustarEnvelope()">
@@ -74,10 +84,10 @@ class MeuMesView extends View {
                     ${KontabsUI.kpi("Gastei até agora", spentStr, toPayStr, "warning", "Contas e compras liquidadas", "app/assets/illustrations/receipt-happy.png")}
                 </div>
                 <div class="col-12 col-sm-6 col-xl-3">
-                    ${KontabsUI.kpi("Reservei & Investi", reservedStr, "Ritmo exemplar", "success", "Aportes guardados", "app/assets/illustrations/chart-growth.png")}
+                    ${KontabsUI.kpi("Reservei & Investi", reservedStr, reservedVal > 0 ? "Aportes guardados" : "Sem aportes", "success", "Aportes guardados", "app/assets/illustrations/chart-growth.png")}
                 </div>
                 <div class="col-12 col-sm-6 col-xl-3">
-                    ${KontabsUI.kpi("Previsão Fechamento", closingStr, "Positivo 🟢", "success", "Saldo projetado no azul", "app/assets/illustrations/wallet-green.png")}
+                    ${KontabsUI.kpi("Previsão Fechamento", closingStr, closingVal >= 0 ? "Positivo 🟢" : "Atenção 🔴", closingVal >= 0 ? "success" : "danger", "Saldo projetado no mês", "app/assets/illustrations/wallet-green.png")}
                 </div>
             </div>
         `;
@@ -91,8 +101,8 @@ class MeuMesView extends View {
 
         if (categories && categories.length > 0) {
             categories.forEach(c => {
-                let budget = parseFloat(c.monthly_budget);
-                let realized = parseFloat(c.realized);
+                let budget = parseFloat(c.monthly_budget || 0);
+                let realized = parseFloat(c.realized || 0);
                 let diff = budget - realized;
                 let isOver = diff < 0;
 
@@ -111,24 +121,22 @@ class MeuMesView extends View {
                     `R$ ${budget.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`,
                     `R$ ${realized.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`,
                     diffHtml,
-                    KontabsUI.progress("p-cat-" + c.id, realized, budget, "", progressColor),
+                    KontabsUI.progress("p-cat-" + c.id, realized, Math.max(1, budget), "", progressColor),
                     situation
                 ]);
             });
         } else {
             catRows = [
-                [`<strong>Moradia & Escritório</strong>`, `R$ 2.400,00`, `R$ 2.830,00`, `<span class="text-danger fw-bold">+ R$ 430,00</span>`, KontabsUI.progress("p-moradia", 2830, 2400, "", "warning"), `<span class="pill pill-warning">Atenção</span>`],
-                [`<strong>Alimentação</strong>`, `R$ 1.800,00`, `R$ 2.030,00`, `<span class="text-danger fw-bold">+ R$ 230,00</span>`, KontabsUI.progress("p-ali", 2030, 1800, "", "warning"), `<span class="pill pill-warning">Atenção</span>`],
-                [`<strong>Transporte</strong>`, `R$ 900,00`, `R$ 780,00`, `<span class="text-success fw-bold">- R$ 120,00</span>`, KontabsUI.progress("p-trans", 780, 900, "", "success"), KontabsUI.status("efetivado", "No plano")]
+                [`-`, `R$ 0,00`, `R$ 0,00`, `R$ 0,00`, KontabsUI.progress("p-empty", 0, 1, "", "success"), KontabsUI.status("efetivado", "Sem registros")]
             ];
         }
 
         let catTableHtml = KontabsUI.table(catHeaders, catRows);
         let budgetCard = KontabsUI.card("Orçamento por Categoria — Previsto x Realizado", catTableHtml);
 
-        let chartLabels = chartData && chartData.labels ? chartData.labels : ["Moradia & Escritório", "Alimentação", "Transporte"];
-        let chartSeries = chartData && chartData.series ? chartData.series : [2830, 2030, 780];
-        let totalChartStr = chartData ? 'R$ ' + chartData.total.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 5.640,00';
+        let chartLabels = (chartData && chartData.labels && chartData.labels.length > 0) ? chartData.labels : ["Sem despesas"];
+        let chartSeries = (chartData && chartData.series && chartData.series.length > 0) ? chartData.series : [0];
+        let totalChartStr = chartData ? 'R$ ' + parseFloat(chartData.total || 0).toLocaleString('pt-BR', {minimumFractionDigits: 2}) : 'R$ 0,00';
 
         let chartCard = KontabsUI.card(
             "Distribuição dos Gastos",
@@ -158,17 +166,17 @@ class MeuMesView extends View {
             </div>
         `;
 
-        // 4. Insights Acolhedores no Grid Bootstrap (3 colunas iguais)
-        let insightsCard = `
-            <div class="kontabs-card p-4">
-                <h5 class="fw-bold mb-3 font-display">💡 Observações & Insights do Mês</h5>
+        // 4. Insights Acolhedores no Grid Bootstrap
+        let insightsContent = '';
+        if (spentVal > 0 || receivedVal > 0) {
+            insightsContent = `
                 <div class="row g-3">
                     <div class="col-12 col-md-4">
                         <div class="p-3 rounded-4 bg-light h-100 d-flex gap-3 align-items-start">
                             <img src="app/assets/alerts/alert-budget-piggy.png" style="width: 36px; height: 36px; object-fit: contain;">
                             <div>
-                                <strong class="d-block mb-1">Alimentação</strong>
-                                <p class="text-muted small mb-0">Gasto R$ 230,00 acima do planejado para o período. Quer revisar os próximos dias?</p>
+                                <strong class="d-block mb-1">Acompanhamento de Gastos</strong>
+                                <p class="text-muted small mb-0">Total realizado até o momento: <strong>${spentStr}</strong>. Mantenha os envelopes sob controle.</p>
                             </div>
                         </div>
                     </div>
@@ -176,8 +184,8 @@ class MeuMesView extends View {
                         <div class="p-3 rounded-4 bg-light h-100 d-flex gap-3 align-items-start">
                             <img src="app/assets/illustrations/coin-happy.png" style="width: 36px; height: 36px; object-fit: contain;">
                             <div>
-                                <strong class="d-block mb-1">Economia em Transporte</strong>
-                                <p class="text-muted small mb-0">Gastos com combustível ficaram <strong>R$ 120,00</strong> abaixo do teto previsto. Ótimo controle!</p>
+                                <strong class="d-block mb-1">Previsão de Fechamento</strong>
+                                <p class="text-muted small mb-0">Com base nos compromissos cadastrados, seu fechamento estimado é de <strong>${closingStr}</strong>.</p>
                             </div>
                         </div>
                     </div>
@@ -185,12 +193,27 @@ class MeuMesView extends View {
                         <div class="p-3 rounded-4 bg-light h-100 d-flex gap-3 align-items-start">
                             <img src="app/assets/illustrations/chart-growth.png" style="width: 36px; height: 36px; object-fit: contain;">
                             <div>
-                                <strong class="d-block mb-1">Meta da Reserva</strong>
-                                <p class="text-muted small mb-0">Você já acumulou <strong>68%</strong> da Reserva de Emergência. Mantendo o ritmo, atinge o total em 4 meses!</p>
+                                <strong class="d-block mb-1">Reservas & Destino</strong>
+                                <p class="text-muted small mb-0">Aportes acumulados em reservas: <strong>${reservedStr}</strong>.</p>
                             </div>
                         </div>
                     </div>
                 </div>
+            `;
+        } else {
+            insightsContent = `
+                <div class="text-center py-3 text-muted">
+                    <i class="bi bi-lightbulb fs-2 text-warning d-block mb-2"></i>
+                    <strong>Primeiros passos com seu mês financeiro</strong>
+                    <p class="small mb-0">Conforme você lançar suas movimentações e compras do dia a dia, esta área exibirá diagnósticos automáticos e oportunidades de economia.</p>
+                </div>
+            `;
+        }
+
+        let insightsCard = `
+            <div class="kontabs-card p-4">
+                <h5 class="fw-bold mb-3 font-display">💡 Observações & Insights do Mês</h5>
+                ${insightsContent}
             </div>
         `;
 
@@ -208,15 +231,10 @@ class MeuMesView extends View {
     }
 
     renderEnvelopesSection(budgetsData) {
-        const envelopes = budgetsData && budgetsData.envelopes ? budgetsData.envelopes : [
-            { category_id: 3, name: "Moradia & Escritório", icon: "bi-house-door", monthly_budget: 2400, spent: 2830, percentage: 117.9, safe_daily_spend: 0, status: "exceeded", status_label: "Orçamento Estourado", status_color: "danger" },
-            { category_id: 4, name: "Alimentação", icon: "bi-cart", monthly_budget: 1800, spent: 2030, percentage: 112.8, safe_daily_spend: 0, status: "exceeded", status_label: "Orçamento Estourado", status_color: "danger" },
-            { category_id: 5, name: "Transporte", icon: "bi-car-front", monthly_budget: 900, spent: 780, percentage: 86.7, safe_daily_spend: 20.00, days_remaining: 6, status: "warning", status_label: "Alerta de Consumo", status_color: "info" }
-        ];
-
-        const daysRemaining = budgetsData ? budgetsData.days_remaining : 6;
-        const totalBudgeted = budgetsData ? budgetsData.total_budgeted : 5100;
-        const totalSpent = budgetsData ? budgetsData.total_spent : 5640;
+        const envelopes = (budgetsData && budgetsData.envelopes) ? budgetsData.envelopes : [];
+        const daysRemaining = budgetsData ? budgetsData.days_remaining : 0;
+        const totalBudgeted = budgetsData ? (parseFloat(budgetsData.total_budgeted) || 0) : 0;
+        const totalSpent = budgetsData ? (parseFloat(budgetsData.total_spent) || 0) : 0;
         const overallPct = budgetsData ? budgetsData.overall_percentage : 110.6;
 
         let cardsHtml = '';

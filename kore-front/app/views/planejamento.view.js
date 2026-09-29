@@ -253,10 +253,16 @@ class PlanejamentoView extends View {
 
             // Saldo sem destino vem do checkup ou da regra do mês
             const checkupData = checkupRes.data || {};
-            this.unallocatedBalance = checkupData.unallocated_balance ? parseFloat(checkupData.unallocated_balance) : 1230.00;
+            const rev = (checkupData.total_revenue_expected !== undefined && checkupData.total_revenue_expected !== null) ? parseFloat(checkupData.total_revenue_expected) : 0;
+            const exp = (checkupData.total_expense_expected !== undefined && checkupData.total_expense_expected !== null) ? parseFloat(checkupData.total_expense_expected) : 0;
+            const prov = this.reserves.reduce((acc, r) => acc + (parseFloat(r.current_amount) || 0), 0);
 
-            this.renderEquation(checkupData);
-            this.renderAlert();
+            this.unallocatedBalance = (checkupData.unallocated_balance !== undefined && checkupData.unallocated_balance !== null) 
+                ? parseFloat(checkupData.unallocated_balance) 
+                : Math.max(0, rev - exp - prov);
+
+            this.renderEquation(checkupData, rev, exp, prov);
+            this.renderAlert(rev, exp);
             this.renderReserves();
             this.populateSelects();
         } catch (e) {
@@ -269,10 +275,7 @@ class PlanejamentoView extends View {
         }
     }
 
-    renderEquation(data) {
-        const rev = data.total_revenue_expected ? parseFloat(data.total_revenue_expected) : 12400.00;
-        const exp = data.total_expense_expected ? parseFloat(data.total_expense_expected) : 8370.00;
-        const prov = 2800.00; // Provisionado em reservas
+    renderEquation(data, rev, exp, prov) {
         const unallocated = this.unallocatedBalance;
 
         jQuery('.total-revenues-val').text(rev.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
@@ -281,7 +284,20 @@ class PlanejamentoView extends View {
         jQuery('.unallocated-val').text(unallocated.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }));
     }
 
-    renderAlert() {
+    renderAlert(rev, exp) {
+        if (rev === 0 && exp === 0) {
+            const alertInfo = KontabsUI.alert(
+                'info',
+                'Bem-vindo ao Planejamento & Destino!',
+                'Cadastre suas primeiras movimentações previstas para que o Kontabs calcule automaticamente sua equação orçamentária.',
+                'Nova Movimentação',
+                'KontabsUI.openNovaMovimentacaoModal()',
+                'app/assets/illustrations/coin-happy.png'
+            );
+            jQuery('.unallocated-alert-container').html(alertInfo);
+            return;
+        }
+
         if (this.unallocatedBalance > 0) {
             const formatted = this.unallocatedBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             const alertHtml = KontabsUI.alert(

@@ -158,6 +158,43 @@ Explore as principais seções navegáveis já ativas na Fase 1:
 - [x] **Fase 7 — Planejamento Mensal, Provisionamentos e Envelopes de Gastos por Categoria**
 - [x] **Fase 8 — Motor de Projeção Financeira e Fluxo de Caixa Futuro (7d, 30d, 90d, 12m)**
 - [x] **Fase 9 — Inteligência Financeira, Detecção Proativa de Padrões e Check-up Semanal**
+- [x] **Fase 10 — Registro na Tela Principal, Google OAuth, Tutorial Interativo, Central de Ajuda e Publicação Online**
+
+---
+
+## 🌐 Publicação Online e Detecção Automática de Ambiente
+
+O **Kodey Kontabs** foi projetado para operar com **zero atrito** tanto em ambiente local de desenvolvimento quanto publicado online em produção:
+
+- 🖥️ **Frontend Oficial**: `https://kontabs.kodey.com.br`
+- 📡 **Backend API RESTful**: `https://kontabsapi.kodey.com.br`
+
+### 🔄 Detecção Automática de Ambiente (Zero Configuração)
+Tanto o PHP (`environment.php`) quanto o JavaScript (`api.service.js` e `config.js`) inspecionam o host atual:
+- **Quando rodando localmente** (`localhost`, `127.0.0.1`, `::1` ou domínios `.local` / `.test`): O sistema conecta automaticamente na porta local configurada no `.env` (ex: `http://localhost:8000/` ou `http://localhost:8001/`).
+- **Quando rodando em produção online** (`kontabs.kodey.com.br`): O sistema detecta automaticamente o domínio e se comunica diretamente com a API em `https://kontabsapi.kodey.com.br/`, sem necessidade de alterar código.
+
+### 🚀 Novas Funcionalidades na Interface
+
+1. **Registro na Tela Principal (`LoginView`)**:
+   - Alternância fluida entre as abas **"Acessar Conta"** e **"Criar Nova Conta"**.
+   - Cadastro com validação de dados, definição de uso Pessoal (PF) ou Empresarial (PJ).
+   - Provisão automática de organização, contas padrão e categorias orçamentárias.
+
+2. **Registro & Login com Conta Google (Google Identity Services / OAuth)**:
+   - Botão oficial com identidade visual 4 cores do Google.
+   - Suporte nativo ao Google GIS (`https://accounts.google.com/gsi/client`) via variável `GOOGLE_CLIENT_ID`.
+   - Assistente interativo integrado para testes em ambiente local e desenvolvimento.
+
+3. **Tutorial Interativo de Como Usar o Sistema (`KontabsTutorial`)**:
+   - Walkthrough em 6 passos acolhedores explicando a regra de ouro (*Cada real com uma origem, cada real com um destino*), Dinheiro sem Destino e sem Origem, Previsto vs. Realizado, e o Check-up semanal.
+   - Disparo automático no primeiro acesso e acionável a qualquer momento pelo botão **"Como Usar"** no topo da tela.
+
+4. **Central de Ajuda & Suporte na Tela (`KontabsHelp`)**:
+   - Botão flutuante **"Ajuda & Dúvidas"** com indicador de pulso suave no canto inferior direito.
+   - Drawer lateral com pesquisa dinâmica em tempo real para FAQs e dúvidas frequentes.
+   - Canais de atendimento com suporte humano direto (WhatsApp oficial Kodey e e-mail).
+   - Atalho global de teclado: `Ctrl + H`.
 
 ---
 
@@ -167,3 +204,4 @@ Distribuído sob a licença **MIT**. Consulte o arquivo [`LICENSE`](LICENSE) par
 
 - **Desenvolvido por**: [Kodey Sistemas](https://kodey.com.br) & [Alex Reis](https://github.com/alex-o-reis)
 - **Tecnologia**: Powered by **Kore Framework (KKF)**
+

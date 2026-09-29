@@ -398,6 +398,33 @@ class KontabsUI {
         return KontabsUI.r.kontabsChartContainer(id, title, chart, actions);
     }
 
+    // Atualiza dados visuais do usuário e inicializa Help System
+    static initUserDisplay() {
+        try {
+            const user = ApiService.getUser();
+            if (user) {
+                const name = user.name || 'Usuário Kontabs';
+                const avatar = user.avatar || name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+                jQuery('.user-avatar').text(avatar);
+                jQuery('#sidebar-user-name, .kore-sidebar-user .fw-bold').text(name);
+            }
+            const orgName = ApiService.getActiveOrgName();
+            if (orgName) {
+                jQuery('#sidebar-org-name, #active-org-name').text(orgName);
+            }
+            // Inicializa botão flutuante de Ajuda na tela
+            if (typeof KontabsHelp !== 'undefined' && KontabsHelp.init) {
+                KontabsHelp.init();
+            }
+            // Auto-start tutorial se for novo usuário ou primeira visita
+            if (typeof KontabsTutorial !== 'undefined' && KontabsTutorial.checkAutoStart) {
+                KontabsTutorial.checkAutoStart();
+            }
+        } catch (e) {
+            console.warn('[KontabsUI] initUserDisplay falhou:', e);
+        }
+    }
+
     // Utilitários de Organização Multi-Organização (PF e PJ)
     static async initOrganizations() {
         try {

@@ -93,4 +93,42 @@ class BalanceService
             'status' => $projectedClosing >= 0 ? 'positive' : 'negative'
         ];
     }
+
+    /**
+     * Retorna o fluxo financeiro semanal (Previsto x Realizado) para o mês da organização ativa.
+     */
+    public static function getWeeklyFlow(int $organizationId, string $month): array
+    {
+        $startDate = $month . '-01';
+        $endDate = date('Y-m-t', strtotime($startDate));
+
+        $expected = [0.0, 0.0, 0.0, 0.0, 0.0];
+        $effective = [0.0, 0.0, 0.0, 0.0, 0.0];
+
+        $stmt = Model::query(
+            "SELECT DAY(due_date) as d, type, status, amount_expected, COALESCE(amount_effective, amount_expected) as amount_actual
+             FROM transactions 
+             WHERE organization_id = ? AND competence_date BETWEEN ? AND ?",
+            [$organizationId, $startDate, $endDate]
+        );
+        $txs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($txs as $tx) {
+            $day = (int) ($tx['d'] ?: 1);
+            $weekIdx = min(4, intdiv(max(1, $day) - 1, 7));
+            $amtExp = (float) $tx['amount_expected'];
+            $amtAct = (float) $tx['amount_actual'];
+
+            $expected[$weekIdx] += $amtExp;
+            if ($tx['status'] === 'effective') {
+                $effective[$weekIdx] += $amtAct;
+            }
+        }
+
+        return [
+            'labels' => ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'],
+            'expected' => $expected,
+            'effective' => $effective
+        ];
+    }
 }

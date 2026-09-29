@@ -1,8 +1,10 @@
 <?php
 ob_start();
 
-// CORS Universal Headers
-header("Access-Control-Allow-Origin: *");
+// CORS Universal Headers para Local e Produção (kontabs.kodey.com.br / localhost)
+$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
+header("Access-Control-Allow-Origin: $origin");
+header("Access-Control-Allow-Credentials: true");
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-Tenant-Id, X-Organization-Id, Accept, Origin, *");
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");

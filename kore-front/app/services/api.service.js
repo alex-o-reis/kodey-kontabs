@@ -1,10 +1,29 @@
 /**
  * ApiService — Cliente HTTP Centralizado para a API do Kore Framework
- * Conecta o Frontend SPA ao Backend RESTful em http://127.0.0.1:8000/
+ * Conecta o Frontend SPA ao Backend RESTful (Local ou Produção Online)
+ * Local: http://localhost:8000/ | Online: https://kontabsapi.kodey.com.br/
  */
 class ApiService {
+    /**
+     * Identifica se está rodando em ambiente local
+     */
+    static isLocal() {
+        if (typeof window === 'undefined' || !window.location) return true;
+        const hostname = window.location.hostname;
+        return (
+            hostname === 'localhost' ||
+            hostname === '127.0.0.1' ||
+            hostname === '::1' ||
+            hostname.endsWith('.local') ||
+            hostname.endsWith('.test')
+        );
+    }
+
+    /**
+     * Retorna a Base URL da API com detecção automática do ambiente
+     */
     static getBaseUrl() {
-        // 1. Suporte a parâmetros na URL (?api_port=8080 ou ?api_url=http://localhost:8080/)
+        // 1. Suporte a parâmetros na URL (?api_port=8080 ou ?api_url=https://...)
         try {
             if (typeof window !== 'undefined' && window.location) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -34,17 +53,21 @@ class ApiService {
             return window.KONTABS_API_URL.endsWith('/') ? window.KONTABS_API_URL : window.KONTABS_API_URL + '/';
         }
 
-        // 4. KoreConfig.API_URL
+        // 4. Detecção automática de ambiente pelo hostname (Online x Local)
+        if (!this.isLocal()) {
+            return 'https://kontabsapi.kodey.com.br/';
+        }
+
+        // 5. KoreConfig.API_URL fallback
         if (typeof KoreConfig !== 'undefined' && KoreConfig.API_URL) {
             return KoreConfig.API_URL.endsWith('/') ? KoreConfig.API_URL : KoreConfig.API_URL + '/';
         }
 
-        return 'http://127.0.0.1:8000/';
+        return 'http://localhost:8000/';
     }
 
     /**
      * Define dinamicamente a porta da API no LocalStorage
-     * Exemplo: ApiService.setApiPort(8080)
      */
     static setApiPort(port) {
         if (!port) {
@@ -58,7 +81,6 @@ class ApiService {
 
     /**
      * Define dinamicamente a URL completa da API no LocalStorage
-     * Exemplo: ApiService.setBaseUrl('http://192.168.1.100:8000/')
      */
     static setBaseUrl(url) {
         if (!url) {
@@ -68,9 +90,46 @@ class ApiService {
         }
     }
 
+    static getToken() {
+        return localStorage.getItem('kontabs_token') || '';
+    }
+
+    static getUser() {
+        try {
+            return JSON.parse(localStorage.getItem('kontabs_user') || 'null');
+        } catch (e) {
+            return null;
+        }
+    }
+
+    static setSession(authData) {
+        if (authData.token) {
+            localStorage.setItem('kontabs_token', authData.token);
+        }
+        if (authData.user) {
+            localStorage.setItem('kontabs_user', JSON.stringify(authData.user));
+        }
+        if (authData.active_organization) {
+            this.setActiveOrgId(authData.active_organization.id, authData.active_organization.name);
+        }
+        if (authData.organizations) {
+            localStorage.setItem('kontabs_user_orgs', JSON.stringify(authData.organizations));
+        }
+    }
+
+    static logout() {
+        localStorage.removeItem('kontabs_token');
+        localStorage.removeItem('kontabs_user');
+        localStorage.removeItem('kontabs_user_orgs');
+        localStorage.removeItem('kontabs_active_org_id');
+        localStorage.removeItem('kontabs_active_org_name');
+        window.location.hash = '#/login';
+        window.location.reload();
+    }
+
     static getActiveOrgId() {
         let saved = localStorage.getItem('kontabs_active_org_id');
-        return saved ? parseInt(saved, 10) : 1;
+        return saved ? parseInt(saved, 10) : 0;
     }
 
     static setActiveOrgId(orgId, orgName = '') {
@@ -82,17 +141,19 @@ class ApiService {
     }
 
     static getActiveOrgName() {
-        return localStorage.getItem('kontabs_active_org_name') || 'Kodey Sistemas';
+        return localStorage.getItem('kontabs_active_org_name') || 'Minhas Finanças';
     }
 
     static async request(endpoint, options = {}) {
         const url = new URL(endpoint.replace(/^\//, ''), this.getBaseUrl());
-        
+        const token = this.getToken();
+
         // Adiciona headers padronizados do Kore Framework
         const headers = {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'X-Organization-Id': this.getActiveOrgId().toString(),
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             ...(options.headers || {})
         };
 
@@ -113,6 +174,12 @@ class ApiService {
             const data = await response.json().catch(() => null);
 
             if (!response.ok) {
+                // Se receber 401 não autenticado (fora das rotas de login/registro), limpa sessão e redireciona
+                if (response.status === 401 && !url.pathname.includes('/auth/login') && !url.pathname.includes('/auth/register') && !url.pathname.includes('/auth/google')) {
+                    localStorage.removeItem('kontabs_token');
+                    window.location.hash = '#/login';
+                }
+
                 const errorMsg = data && data.error ? data.error : `Erro HTTP ${response.status}`;
                 throw new Error(errorMsg);
             }
@@ -144,5 +211,18 @@ class ApiService {
 
     static delete(endpoint) {
         return this.request(endpoint, { method: 'DELETE' });
+    }
+
+    // Atalhos de Autenticação
+    static login(username, password) {
+        return this.post('auth/login', { username, password });
+    }
+
+    static register(payload) {
+        return this.post('auth/register', payload);
+    }
+
+    static googleAuth(credential, userData = {}) {
+        return this.post('auth/google', { credential, user_data: userData });
     }
 }
