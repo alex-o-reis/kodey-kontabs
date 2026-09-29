@@ -4,7 +4,68 @@
  */
 class ApiService {
     static getBaseUrl() {
-        return KoreConfig.API_URL || 'http://127.0.0.1:8000/';
+        // 1. Suporte a parâmetros na URL (?api_port=8080 ou ?api_url=http://localhost:8080/)
+        try {
+            if (typeof window !== 'undefined' && window.location) {
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has('api_port')) {
+                    const port = urlParams.get('api_port');
+                    const protocol = window.location.protocol;
+                    const hostname = window.location.hostname || 'localhost';
+                    return `${protocol}//${hostname}:${port}/`;
+                }
+                if (urlParams.has('api_url')) {
+                    let url = urlParams.get('api_url');
+                    return url.endsWith('/') ? url : url + '/';
+                }
+            }
+        } catch (e) {}
+
+        // 2. LocalStorage override configurável em tempo de execução
+        try {
+            const savedUrl = localStorage.getItem('kontabs_api_url');
+            if (savedUrl) {
+                return savedUrl.endsWith('/') ? savedUrl : savedUrl + '/';
+            }
+        } catch (e) {}
+
+        // 3. Injetado via window.KONTABS_API_URL (.env do frontend ou servidor)
+        if (typeof window !== 'undefined' && window.KONTABS_API_URL) {
+            return window.KONTABS_API_URL.endsWith('/') ? window.KONTABS_API_URL : window.KONTABS_API_URL + '/';
+        }
+
+        // 4. KoreConfig.API_URL
+        if (typeof KoreConfig !== 'undefined' && KoreConfig.API_URL) {
+            return KoreConfig.API_URL.endsWith('/') ? KoreConfig.API_URL : KoreConfig.API_URL + '/';
+        }
+
+        return 'http://127.0.0.1:8000/';
+    }
+
+    /**
+     * Define dinamicamente a porta da API no LocalStorage
+     * Exemplo: ApiService.setApiPort(8080)
+     */
+    static setApiPort(port) {
+        if (!port) {
+            localStorage.removeItem('kontabs_api_url');
+        } else {
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname || 'localhost';
+            this.setBaseUrl(`${protocol}//${hostname}:${port}/`);
+        }
+    }
+
+    /**
+     * Define dinamicamente a URL completa da API no LocalStorage
+     * Exemplo: ApiService.setBaseUrl('http://192.168.1.100:8000/')
+     */
+    static setBaseUrl(url) {
+        if (!url) {
+            localStorage.removeItem('kontabs_api_url');
+        } else {
+            localStorage.setItem('kontabs_api_url', url.endsWith('/') ? url : url + '/');
+        }
     }
 
     static getActiveOrgId() {

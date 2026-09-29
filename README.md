@@ -112,15 +112,31 @@ A interface utiliza predominantemente fundo claro (`#FFF9EE` / `#FFFFFF`), basea
 Abra o terminal na pasta do projeto e inicie o servidor:
 
 ```bash
-# Iniciar o Frontend SPA na porta 3000
-php -S localhost:3000 -t kore-front
-
-# Ou utilizando a CLI do Kore Framework:
+# Modo 1: Execução Full-Stack via CLI do Kore (portas padrão: API 8000 / Front 3000)
 ./kore dev
+# ou no Windows:
+kore.bat dev
+
+# Modo 2: Execução em Portas Alternativas via CLI (ex: API na 8080 e Frontend na 3005)
+./kore dev 8080 3005
+# ou no Windows:
+kore.bat dev 8080 3005
+
+# Modo 3: Servidores PHP manuais em portas customizadas
+php -S 127.0.0.1:8080 -t kore-api
+php -S 127.0.0.1:3005 -t kore-front
+
+# Modo 4: Apenas a API Backend em porta customizada
+./kore serve 8080
 ```
 
+> 💡 **Detecção Automática de Portas**:
+> - Ao rodar `./kore dev 8080 3005`, o Frontend sincroniza automaticamente o arquivo `.env` para conectar à API na porta informada.
+> - Se rodar os servidores separadamente, basta abrir o frontend com o parâmetro `?api_port=8080` (ex: `http://localhost:3005/?api_port=8080`) ou configurar `kore-front/.env`.
+> - O CORS do Backend é 100% aberto (`*`), permitindo qualquer porta e origem.
+
 ### 2. Acessar no Navegador
-Acesse: **[http://localhost:3000](http://localhost:3000)**
+Acesse: **[http://localhost:3000](http://localhost:3000)** (ou a porta customizada configurada)
 
 Explore as principais seções navegáveis já ativas na Fase 1:
 - `#/`: **Dashboard** completo com KPIs, Dinheiro Sem Destino e Sem Origem.

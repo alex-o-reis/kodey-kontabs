@@ -13,12 +13,13 @@ class DocsCommand extends Command
 
         file_put_contents($outputFile, json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
 
+        $port = Env::get('APP_PORT', '8000');
         $this->info("======================================================");
         $this->info("  Documentacao OpenAPI / Swagger Gerada!");
         $this->info("======================================================");
         $this->info("  📁 Arquivo JSON : " . $outputFile);
-        $this->info("  🌐 Swagger UI   : http://localhost:8000/docs");
-        $this->info("  📄 OpenAPI Spec : http://localhost:8000/docs/json");
+        $this->info("  🌐 Swagger UI   : http://localhost:$port/docs");
+        $this->info("  📄 OpenAPI Spec : http://localhost:$port/docs/json");
         $this->line();
     }
 }

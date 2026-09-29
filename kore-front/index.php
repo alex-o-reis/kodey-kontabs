@@ -48,6 +48,13 @@ $version = 'v=' . KORE_VERSION;
     <script src="kore/js/template.js?<?=$version?>"></script>
     <script src="kore/js/router.js?<?=$version?>"></script>
 
+    <!-- Configuração Dinâmica da API Backend via Ambiente -->
+    <?php if (defined('API_URL') && !empty(API_URL)): ?>
+    <script>
+        window.KONTABS_API_URL = <?=json_encode(rtrim(API_URL, '/') . '/')?>;
+    </script>
+    <?php endif; ?>
+
     <!-- Configuração do Usuário (app/config.js) -->
     <script src="app/config.js?<?=$version?>"></script>
 

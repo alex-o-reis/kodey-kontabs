@@ -19,6 +19,21 @@ class DevCommand extends Command
         $this->info("  📡 API Backend : http://localhost:$apiPort");
         if ($hasFront) {
             $this->info("  🖥️  Frontend    : http://localhost:$frontPort");
+
+            // Sincroniza a URL da API no .env do frontend
+            $envPath = $frontDir . '/.env';
+            $apiBaseUrl = "http://localhost:$apiPort/";
+            if (file_exists($envPath)) {
+                $content = file_get_contents($envPath);
+                if (preg_match('/^API_URL=.*/m', $content)) {
+                    $content = preg_replace('/^API_URL=.*/m', "API_URL={$apiBaseUrl}", $content);
+                } else {
+                    $content = rtrim($content) . "\nAPI_URL={$apiBaseUrl}\n";
+                }
+                file_put_contents($envPath, $content);
+            } else {
+                file_put_contents($envPath, "APP_ENV=local\nTENANT_MODE=standalone\nAPI_URL={$apiBaseUrl}\n");
+            }
         } else {
             $this->warn("  ℹ️  Frontend não detectado localmente (Modo Repositório de API Isolado)");
         }

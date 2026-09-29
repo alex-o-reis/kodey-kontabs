@@ -5,7 +5,7 @@
 const KoreConfig = {
     APP_NAME: 'Kodey Kontabs',
     TAGLINE: 'Cada real com uma origem. Cada real com um destino.',
-    API_URL: 'http://localhost:8000/',
+    API_URL: (typeof window !== 'undefined' && window.KONTABS_API_URL) ? window.KONTABS_API_URL : 'http://localhost:8000/',
     DEFAULT_ROUTE: '#/',
 
     // Rotas da Aplicação Kontabs
