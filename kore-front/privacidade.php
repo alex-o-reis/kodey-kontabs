@@ -1,7 +1,11 @@
 <?php
+if (function_exists('opcache_reset')) {
+    @opcache_reset();
+}
 require_once __DIR__ . '/environment.php';
 $version = 'v=' . KORE_VERSION . '&t=' . time();
 $baseUrl = rtrim(FRONTEND_URL, '/');
+// Debug Info: API_URL=[<?=API_URL?>] IS_LOCAL=[<?=IS_LOCAL ? 'true' : 'false'?>] ENV_MTIME=[<?=filemtime(__DIR__ . '/environment.php')?>]
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
