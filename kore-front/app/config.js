@@ -12,9 +12,12 @@ const isLocalHostEnv = isBrowserEnv ? (
     window.location.hostname.endsWith('.test')
 ) : false;
 
-const resolvedApiUrl = (isBrowserEnv && window.KONTABS_API_URL) ?
-    window.KONTABS_API_URL :
-    (isLocalHostEnv ? 'http://localhost:8000/' : 'https://kontabsapi.kodey.com.br/');
+let resolvedApiUrl = 'https://kontabsapi.kodey.com.br/';
+if (isLocalHostEnv) {
+    resolvedApiUrl = (isBrowserEnv && window.KONTABS_API_URL) ? window.KONTABS_API_URL : 'http://localhost:8001/';
+} else if (isBrowserEnv && window.KONTABS_API_URL && window.KONTABS_API_URL.startsWith('https://') && window.KONTABS_API_URL.includes('api')) {
+    resolvedApiUrl = window.KONTABS_API_URL;
+}
 
 const KoreConfig = {
     APP_NAME: 'Kodey Kontabs',

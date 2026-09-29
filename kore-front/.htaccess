@@ -5,6 +5,10 @@
     RewriteEngine On
     RewriteBase /
 
+    # URLs limpas para Políticas de Privacidade e Termos de Uso (Google OAuth & LGPD)
+    RewriteRule ^privacidade/?$ privacidade.php [L]
+    RewriteRule ^termos/?$ termos.php [L]
+
     # Permite acesso direto a arquivos e diretórios existentes
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

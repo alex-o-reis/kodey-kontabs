@@ -43,8 +43,9 @@ if ($isLocalhost) {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $defaultFrontend = rtrim($scheme . '://' . $httpHost, '/');
 } else {
+    // Em produção, o backend oficial é SEMPRE https://kontabsapi.kodey.com.br/
     $envApi = getenv('API_URL') ?: ($_ENV['API_URL'] ?? '');
-    if (!empty($envApi) && !str_contains($envApi, 'localhost') && !str_contains($envApi, '127.0.0.1')) {
+    if (!empty($envApi) && str_starts_with($envApi, 'https://') && str_contains($envApi, 'api') && !str_contains($envApi, 'localhost')) {
         $defaultApi = $envApi;
     } else {
         $defaultApi = 'https://kontabsapi.kodey.com.br/';

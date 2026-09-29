@@ -136,7 +136,7 @@ class LoginView extends View {
                         <div class="form-check mb-3">
                             <input class="form-check-input" type="checkbox" id="reg-termos" checked required>
                             <label class="form-check-label small text-muted" for="reg-termos">
-                                Concordo com os <a href="javascript:;" onclick="LoginView.showTermsModal()" class="text-success text-decoration-none">Termos de Uso</a> e Política de Privacidade.
+                                Concordo com os <a href="termos.php" target="_blank" class="text-success text-decoration-none fw-semibold">Termos de Uso</a> e a <a href="privacidade.php" target="_blank" class="text-success text-decoration-none fw-semibold">Política de Privacidade</a>.
                             </label>
                         </div>
 
@@ -153,7 +153,8 @@ class LoginView extends View {
                     </div>
 
                     <!-- Botão Oficial de Registro e Login com Google -->
-                    <div id="google-auth-container" class="mb-3">
+                    <div id="google-auth-container" class="mb-3 text-center">
+                        <div id="native-google-signin-btn" class="d-none justify-content-center"></div>
                         <button type="button" class="btn btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-2 bg-white shadow-sm rounded-3 hover-shadow" id="btn-google-auth" onclick="LoginView.triggerGoogleAuth()" style="border-color: #d1d5db; color: #374151; font-weight: 600;">
                             <!-- Google SVG Logo Oficial 4 Cores -->
                             <svg width="20" height="20" viewBox="0 0 48 48">
@@ -165,8 +166,6 @@ class LoginView extends View {
                             </svg>
                             <span id="google-btn-label">${isRegister ? 'Registrar com o Google' : 'Continuar com o Google'}</span>
                         </button>
-                        <!-- Container invisível caso GIS renderize botão oficial nativo -->
-                        <div id="native-google-signin-btn" class="d-none mt-2 text-center"></div>
                     </div>
 
                     <!-- Assinatura Institucional -->
@@ -253,6 +252,7 @@ class LoginView extends View {
             jQuery('#google-btn-label').text('Continuar com o Google');
         }
 
+        LoginView.renderGoogleButton(isRegister);
         jQuery('#auth-alert').addClass('d-none');
     }
 
@@ -318,27 +318,65 @@ class LoginView extends View {
      */
     setupGoogleServices() {
         const clientId = window.KONTABS_GOOGLE_CLIENT_ID;
-        if (clientId && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            try {
-                google.accounts.id.initialize({
-                    client_id: clientId,
-                    callback: LoginView.handleGoogleCredentialResponse,
-                    auto_select: false
-                });
+        if (!clientId) return;
 
-                // Tenta renderizar botão oficial se container estiver visível
-                const btnContainer = document.getElementById('native-google-signin-btn');
-                if (btnContainer) {
-                    google.accounts.id.renderButton(btnContainer, {
-                        theme: 'outline',
-                        size: 'large',
-                        width: '100%',
-                        text: 'continue_with'
-                    });
-                }
-            } catch (e) {
-                console.warn('[Google GIS] Inicialização avisou:', e);
+        const tryInit = () => {
+            if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+                LoginView.renderGoogleButton(this.activeTab === 'register');
+                try {
+                    google.accounts.id.prompt();
+                } catch (e) {}
+                return true;
             }
+            return false;
+        };
+
+        if (!tryInit()) {
+            let attempts = 0;
+            const timer = setInterval(() => {
+                attempts++;
+                if (tryInit() || attempts > 25) {
+                    clearInterval(timer);
+                }
+            }, 150);
+        }
+    }
+
+    /**
+     * Renderiza o botão oficial do Google Sign-In via Google Identity Services
+     */
+    static renderGoogleButton(isRegister = false) {
+        const clientId = window.KONTABS_GOOGLE_CLIENT_ID;
+        if (!clientId || typeof google === 'undefined' || !google.accounts || !google.accounts.id) {
+            return;
+        }
+
+        try {
+            google.accounts.id.initialize({
+                client_id: clientId,
+                callback: LoginView.handleGoogleCredentialResponse,
+                auto_select: false,
+                cancel_on_tap_outside: true
+            });
+
+            const btnContainer = document.getElementById('native-google-signin-btn');
+            if (btnContainer) {
+                btnContainer.innerHTML = '';
+                const width = Math.min(380, Math.max(240, btnContainer.offsetWidth || 340));
+                google.accounts.id.renderButton(btnContainer, {
+                    theme: 'outline',
+                    size: 'large',
+                    type: 'standard',
+                    shape: 'rectangular',
+                    width: width,
+                    text: isRegister ? 'signup_with' : 'continue_with',
+                    logo_alignment: 'left'
+                });
+                jQuery('#native-google-signin-btn').removeClass('d-none').addClass('d-flex');
+                jQuery('#btn-google-auth').addClass('d-none');
+            }
+        } catch (e) {
+            console.warn('[Google GIS] renderButton avisou:', e);
         }
     }
 
@@ -348,7 +386,24 @@ class LoginView extends View {
     static triggerGoogleAuth() {
         const clientId = window.KONTABS_GOOGLE_CLIENT_ID;
         if (clientId && typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            google.accounts.id.prompt();
+            try {
+                google.accounts.id.prompt((notification) => {
+                    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                        console.warn('[Google GIS] Not displayed / skipped:', notification.getNotDisplayedReason?.() || notification.getSkippedReason?.());
+                        const modalEl = document.getElementById('modal-google-assistant');
+                        if (modalEl) {
+                            const modal = new bootstrap.Modal(modalEl);
+                            modal.show();
+                        }
+                    }
+                });
+            } catch (e) {
+                const modalEl = document.getElementById('modal-google-assistant');
+                if (modalEl) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+            }
         } else {
             // Se Client ID ainda não configurado ou em ambiente de teste rápido, exibe diálogo interativo
             const modalEl = document.getElementById('modal-google-assistant');
@@ -368,8 +423,9 @@ class LoginView extends View {
         if (!response || !response.credential) return;
 
         LoginView.hideAlert();
-        const btn = jQuery('#btn-google-auth');
-        btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Conectando com Google...');
+        const alertBox = jQuery('#auth-alert');
+        alertBox.removeClass('d-none alert-danger').addClass('alert-info')
+            .html('<div class="d-flex align-items-center gap-2"><span class="spinner-border spinner-border-sm"></span> Conectando com sua conta Google...</div>');
 
         try {
             const res = await ApiService.googleAuth(response.credential);
@@ -378,8 +434,8 @@ class LoginView extends View {
             }
             LoginView.handleAuthSuccess(res);
         } catch (e) {
+            alertBox.removeClass('alert-info').addClass('alert-danger');
             LoginView.showAlert(e.message || 'Falha ao autenticar com o Google.');
-            btn.prop('disabled', false).html('Continuar com o Google');
         }
     }
 

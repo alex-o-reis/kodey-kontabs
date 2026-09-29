@@ -1,7 +1,9 @@
-# Environment files
+# Environment & Secret files
 .env
 kore-api/.env
 kore-front/.env
+client_secret*.json
+*.pem
 
 # Databases & Local state
 *.sqlite

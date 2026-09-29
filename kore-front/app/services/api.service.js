@@ -23,7 +23,12 @@ class ApiService {
      * Retorna a Base URL da API com detecção automática do ambiente
      */
     static getBaseUrl() {
-        // 1. Suporte a parâmetros na URL (?api_port=8080 ou ?api_url=https://...)
+        // 1. Em produção online (kontabs.kodey.com.br), o backend é SEMPRE https://kontabsapi.kodey.com.br/
+        if (!this.isLocal()) {
+            return 'https://kontabsapi.kodey.com.br/';
+        }
+
+        // 2. Suporte a parâmetros na URL (?api_port=8080 ou ?api_url=https://...)
         try {
             if (typeof window !== 'undefined' && window.location) {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -40,7 +45,12 @@ class ApiService {
             }
         } catch (e) {}
 
-        // 2. LocalStorage override configurável em tempo de execução
+        // 3. Injetado via window.KONTABS_API_URL (.env do frontend ou servidor)
+        if (typeof window !== 'undefined' && window.KONTABS_API_URL && window.KONTABS_IS_LOCAL) {
+            return window.KONTABS_API_URL.endsWith('/') ? window.KONTABS_API_URL : window.KONTABS_API_URL + '/';
+        }
+
+        // 4. LocalStorage override configurável em tempo de execução para testes locais
         try {
             const savedUrl = localStorage.getItem('kontabs_api_url');
             if (savedUrl) {
@@ -48,22 +58,12 @@ class ApiService {
             }
         } catch (e) {}
 
-        // 3. Injetado via window.KONTABS_API_URL (.env do frontend ou servidor)
-        if (typeof window !== 'undefined' && window.KONTABS_API_URL) {
-            return window.KONTABS_API_URL.endsWith('/') ? window.KONTABS_API_URL : window.KONTABS_API_URL + '/';
-        }
-
-        // 4. Detecção automática de ambiente pelo hostname (Online x Local)
-        if (!this.isLocal()) {
-            return 'https://kontabsapi.kodey.com.br/';
-        }
-
         // 5. KoreConfig.API_URL fallback
         if (typeof KoreConfig !== 'undefined' && KoreConfig.API_URL) {
             return KoreConfig.API_URL.endsWith('/') ? KoreConfig.API_URL : KoreConfig.API_URL + '/';
         }
 
-        return 'http://localhost:8000/';
+        return 'http://localhost:8001/';
     }
 
     /**
